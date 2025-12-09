@@ -9,28 +9,27 @@
  * -----------------------------------------------------------------------------
  */
 
+// Include Files:
 #include <deal.II/base/exceptions.h>
-
 #include <deal.II/fe/mapping_fe.h>
-
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/grid_tools.h>
-
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
-
 #include <deal.II/numerics/data_out.h>
-
 #include <agglomeration_handler.h>
 #include <poly_utils.h>
-
 #include <algorithm>
 #include <chrono>
 
+
+// This struct is used to store the number of degrees of freedom
+// together with the corresponding L2 and H1 errors, and to
+// print a simple convergence table to the console.
 struct ConvergenceInfo
 {
   ConvergenceInfo() = default;
@@ -57,6 +56,9 @@ struct ConvergenceInfo
     vec_data;
 };
 
+// We will compare the performance of three different partitioning strategies:
+// using METIS, using an R-tree based agglomeration, or not performing any
+// partitioning at all.
 enum class PartitionerType
 {
   metis,
@@ -64,6 +66,10 @@ enum class PartitionerType
   no_partition
 };
 
+// We then implement the manufactured right-hand side
+//   f(x, y) = 2 π² sin(π x) sin(π y),
+// which corresponds to the exact solution
+//   u(x, y) = sin(π x) sin(π y).
 template <int dim>
 class RightHandSide : public Function<dim>
 {
@@ -84,6 +90,11 @@ public:
   }
 };
 
+// This class implements the exact solution
+//   u(x, y) = sin(pi x) sin(pi y),
+// used both to impose Dirichlet boundary conditions and to evaluate
+// the discretization error in the L2 and H1-seminorms.  We also
+// provide its gradient, which is required when computing the H1 error.
 template <int dim>
 class ExactSolution : public Function<dim>
 {
@@ -100,7 +111,6 @@ public:
   {
     return std::sin(numbers::PI * p[0]) * std::sin(numbers::PI * p[1]);
   }
-
 
   virtual void
   value_list(const std::vector<Point<dim>> &points,
@@ -124,7 +134,15 @@ public:
   }
 };
 
-
+// The Poisson<dim> class encapsulates the solution of the model Poisson
+// problem
+// @f[ -\Delta u = f \quad \text{in } \Omega, \qquad u = u_D \quad \text{on } \partial\Omega. @f]
+// It sets up a fine triangulation, constructs agglomerated polytopal
+// cells according to the chosen partitioning strategy, assembles the
+// symmetric interior penalty DG discretization on the agglomerated mesh,
+// solves the resulting linear system, and finally postprocesses the
+// numerical solution by writing visualization output and computing
+// global error norms.
 template <int dim>
 class Poisson
 {
@@ -176,6 +194,12 @@ public:
   double semih1_err;
 };
 
+
+// The constructor initializes the Poisson<dim> solver with a chosen
+// partitioner type, R-tree extraction level, target number of subdomains
+// (for METIS), and DG polynomial degree. It also sets the penalty
+// parameter based on the polynomial degree and dimension, and initializes
+// the manufactured exact solution and right-hand side.
 template <int dim>
 Poisson<dim>::Poisson(const PartitionerType &partitioner_type,
                       const unsigned int     extraction_level,
@@ -194,6 +218,12 @@ Poisson<dim>::Poisson(const PartitionerType &partitioner_type,
   constraints.close();
 }
 
+
+// This function builds the fine triangulation from a Gmsh mesh, applies
+// a global refinement, initializes the GridTools::Cache and
+// AgglomerationHandler objects, and then constructs agglomerated cells
+// according to the selected partitioning strategy (METIS, R-tree, or
+// no partitioning).
 template <int dim>
 void
 Poisson<dim>::make_grid()
@@ -273,6 +303,11 @@ Poisson<dim>::make_grid()
   std::cout << "N subdomains = " << n_subdomains << std::endl;
 }
 
+// This function finalizes the agglomeration: in the no-partition case
+// it declares each fine cell as its own agglomerate, then distributes
+// DoFs on the agglomerated mesh and builds the corresponding sparsity
+// pattern. It also writes a VTU file visualizing the agglomeration and
+// the partitioning of the fine grid.
 template <int dim>
 void
 Poisson<dim>::setup_agglomeration()
@@ -323,6 +358,11 @@ Poisson<dim>::setup_agglomeration()
   }
 }
 
+// This function assembles the global DG system on the agglomerated mesh.
+// It initializes the system matrix and right-hand side, sets up FEValues
+// objects on polytopal cells and interfaces, and then adds the volume,
+// boundary, and interior face contributions of the symmetric interior
+// penalty formulation.
 template <int dim>
 void
 Poisson<dim>::assemble_system()
@@ -557,6 +597,8 @@ Poisson<dim>::solve()
   A_direct.vmult(solution, system_rhs);
 }
 
+// To assess the quality of the agglomerated DG approximation we compute
+// the global @f$ L^2 @f$-norm and @f$ H^1 @f$-seminorm of the error.
 template <int dim>
 void
 Poisson<dim>::output_results()
@@ -617,6 +659,7 @@ Poisson<dim>::output_results()
   }
 }
 
+// Return the total number of degrees of freedom on the agglomerated mesh.
 template <int dim>
 inline types::global_dof_index
 Poisson<dim>::get_n_dofs() const
@@ -624,6 +667,7 @@ Poisson<dim>::get_n_dofs() const
   return ah->n_dofs();
 }
 
+// Return the pair (L2 error, H1-seminorm error) of the numerical solution.
 template <int dim>
 inline std::pair<double, double>
 Poisson<dim>::get_error() const
@@ -631,6 +675,7 @@ Poisson<dim>::get_error() const
   return std::make_pair(l2_err, semih1_err);
 }
 
+// This function runs the complete workflow.
 template <int dim>
 void
 Poisson<dim>::run()

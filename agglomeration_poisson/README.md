@@ -1,5 +1,14 @@
 # A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration
 
+
+This program solves a Poisson problem on an agglomerated polytopal mesh
+using a symmetric interior penalty discontinuous Galerkin (SIPG) method.
+Agglomerates are constructed by an R-tree–based spatial indexing
+strategy, following the approach proposed in [2]. 
+In addition, a graph-based METIS partitioner is also provided in this program for comparison.
+
+
+
 ## Running the code:
 
 As in the tutorial programs, type 
@@ -8,128 +17,209 @@ As in the tutorial programs, type
 
 on the command line to configure the program. After that you can compile with `make` and run with either `make run` or using 
 
-`./DG_advection_reaction`
+`./agglomeration_possion`
 
 on the command line. 
 
-## The problem:
-This program solves the problem, for $\Omega \in \mathbb{R^2}$
 
+
+## SIPG discretization on agglomerated polytopal meshes:
+
+We consider the Poisson problem in a bounded, simply connected domain
+$\Omega \subset \mathbb{R}^d$, $d = 2,3$.
+The strong formulation reads
+@f{align*}
+  -\Delta u &= f  && \text{in } \Omega, \\
+           u &= u_D && \text{on } \partial\Omega,
+@f}
+where the right-hand side satisfies $f \in L^2(\Omega)$ and the prescribed
+Dirichlet data satisfy $u_D \in H^{1/2}(\partial\Omega)$.
+
+The corresponding weak formulation is: find $u \in H^1(\Omega)$ with
+$u = u_D$ on $\partial\Omega$ such that
+@f{equation}
+  \int_{\Omega} \nabla u \cdot \nabla v \,\mathrm d\mathbf{x}
+  =
+  \int_{\Omega} f\, v \,\mathrm d\mathbf{x}
+  \qquad \text{for all } v \in H_0^1(\Omega).
+@f}
+
+
+## Discretization Scheme:
+
+We discretize the weak formulation by a symmetric interior penalty
+discontinuous Galerkin (SIPG) method on the agglomerated polytopal mesh
+$\mathcal T_h$, whose elements $K \in \mathcal T_h$ are mutually disjoint
+open polygons (for $d=2$) or polyhedra (for $d=3$).
+For each element we denote its diameter by
 @f[
-\begin{cases} b \cdot \nabla u + c u = f \qquad  \text{in } \Omega \\
-\qquad \qquad u=g \qquad \text{on } \partial_{-}\Omega \end{cases}
+  h_K := \operatorname{diam}(K).
 @f]
-
-where $g \in L^2(\partial_{-}\Omega)$ and $\partial_{-}\Omega=\{ x \in
-\partial \Omega: b(x)\cdot n(x) <0\}$ is the inflow part of the
-boundary, with $b=(b_1,b_2) \in \mathbb{R^2}$. As we know from
-classical DG theory, we need to ensure that 
+The mesh skeleton is given by
 @f[
-c(x) - \frac{1}{2}\nabla \cdot b \geq \gamma_0 >0
+  \Gamma := \bigcup_{K \in \mathcal T_h} \partial K,
 @f]
-for some positive $\gamma_0$ so that we have coercivity in $L^2$ at the continuous level. Discrete coercivity is achieved by using a stronger norm which takes care of jumps, see Di Pietro and Ern [2] for details.
+and we denote by $\Gamma_{\mathrm{int}}$ the union of interior faces,
+while $\Gamma_{\mathrm D} := \Gamma \cap \partial\Omega$ collects the
+Dirichlet boundary faces.
 
+The discrete space $V_h$ consists of element-wise polynomials of degree
+at most $p$ on each $K \in \mathcal T_h$. For $u_h, v_h \in V_h$ we use
+the broken gradient $\nabla_h$ and the standard jump and average
+operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces.
 
-## The weak formulation:
+The DG formulation reads: find $u_h \in V_h$ such that
+@f{equation}
+  B(u_h,v_h) = l(v_h)
+  \qquad \forall\, v_h \in V_h,
+@f}
+with
+@f{align*}
+  B(u_h,v_h)
+  &=
+  \int_{\Omega} \nabla_h u_h \cdot \nabla_h v_h \,\mathrm d\mathbf{x}
+  \\
+  &\quad
+  - \int_{\Gamma}
+    \Bigl(
+      \{\!\!\{\nabla u_h\}\!\!\} \cdot [\![v_h]\!]
+      +
+      \{\!\!\{\nabla v_h\}\!\!\} \cdot [\![u_h]\!]
+    \Bigr)\,\mathrm d s
+  \\
+  &\quad
+  + \int_{\Gamma} \sigma \,[\![u_h]\!] \cdot [\![v_h]\!] \,\mathrm d s,
+@f}
+and
+@f{equation}
+  l(v_h)
+  =
+  \int_\Omega f\, v_h \,\mathrm d\mathbf{x}
+  +
+  \int_{\Gamma_{\mathrm D}}
+    u_D \bigl(\sigma v_h - \nabla v_h \cdot \mathbf n\bigr)\,\mathrm d s.
+@f}
 
-As trial space we choose $V_h = \{ v_h \in L^2(\Omega): v_h \in P^1(\mathbb{T_h})\} \notin H^1(\Omega)$. If we integrate by parts and sum over all cells
+The penalty parameter is chosen as
+@f{equation}
+  \sigma(\mathbf x) = C_\sigma
+  \begin{cases}
+    \dfrac{p^2}{h_K}, &
+      \text{if } \mathbf x \in \partial K \cap \partial\Omega, \\[0.5em]
+    \dfrac{p^2}{\min\{h_K^+,h_K^-\}}, &
+      \text{if } \mathbf x \in \Gamma_{\mathrm{int}},
+  \end{cases}
+@f}
+where $h_K^\pm$ are the diameters of the two elements sharing the
+interior face, $p$ is the polynomial degree, and we fix $C_\sigma = 10$ in this program.
 
+This scheme is well posed and admits optimal-order a priori error
+estimates. More precisely, assuming that $u|_K \in H^{s+1}(K)$ for all
+$K \in \mathcal T_h$ and some $1 \le s \le p$, there exists a constant
+$C > 0$, independent of $h$, such that
 @f[
-\sum_{T \in \mathbb{T}_h} \Bigl( (-u,\beta \cdot \nabla v_h) _T + (c
-u,v_h)_T + \bigl<(b \cdot n) u ,v_h \bigr>_{\partial T} \Bigr) =
-(f,v_h)_{\Omega}
+  \|u - u_h\|_{L^2(\Omega)}
+  \le C\, h^{s+1} \, |u|_{H^{s+1}(\Omega)},
 @f]
-
-and use the so-called DG magic formula and exploit the property $[bu]_{\mathbb{F}^i} = 0$ where $\mathbb{F}^i$ are set of internal faces we obtain the (unstable!) formulation:
-
-Find $u_h \in V_h$: 
-
+and
 @f[
-    a_h(u_h,v_h) + b_h(u_h,v_h)=l(v_h) \qquad \forall v_h \in V_h
+  \|\nabla(u - u_h)\|_{L^2(\Omega)}
+  \le C\, h^{s} \, |u|_{H^{s+1}(\Omega)}.
 @f]
-where
-@f[
-a_h(u,v_h)=\sum_{T \in \mathbb{T}_h} \Bigl( (-u,b \cdot \nabla v_h) _T + (c u,v_h)_T \Bigr)
-@f]
+We refer to [2] for details of the analysis.
 
-@f[    
-b_h(u,v_h)= \sum_{F \not \in \partial_{-}\Omega} \bigl< \{ bu\}, [v_h]\bigr>_F 
-@f]
+## Agglomeration strategies
+Agglomeration is a key ingredient for constructing polytopic meshes.
+This program supports two strategies for generating agglomerates,
+corresponding to the choices \texttt{metis} and \texttt{rtree}.
 
-@f[
-    l(v_h)= (f,v_h)_{\Omega} - \sum_{F \in \partial_{-}\Omega} \bigl< (b \cdot n) g,v_h \bigr>_F
-@f]
 
-It's well known this formulation is coercive only in $L^2$, hence the formulation is unstable as we don't "see" the derivatives. To stabilize this, we can use a jump-penalty term, i.e. our $b_h$ is replaced by:
+### METIS-based partitioning 
+In the \emph{metis} option, the adjacency graph of the fine mesh is
+constructed with one vertex per cell and edges between face-neighbouring
+cells. This graph is then partitioned by the multilevel graph partitioner
+METIS into a prescribed number of parts, and each part defines one
+agglomerate; see~[3] for details.
 
-@f[
-b_h^s(u_h,v_h)=b_h(u_h,v_h)+ \sum_{F \in \mathbb{F}^i} \bigl< c_F
-[u_h],[v_h]  \bigr> 
-@f]
+### R-tree geometric partitioning 
 
-where $c_F>0$ is a function on each edge such that $c_F \geq \theta |b \cdot n|$ for some positive $\theta$. In this program, $\theta=\frac{1}{2}$ and $c_F = \frac{1}{2} |b \cdot n|$, which corresponds to an upwind formulation. Notice that consistency is trivially achieved, as $[u]_{\mathbb{F}^i} =0$. This formulation is stable in the energy norm 
+In the `rtree` option, axis-aligned bounding boxes of all fine cells are
+inserted into a spatial R-tree. Agglomerates are obtained by grouping the
+cells whose bounding boxes belong to the same node at a user-selected
+extraction level of the tree. This purely geometric strategy does not
+require external graph partitioners and is typically fast and scalable.
+The number and shape of the agglomerates are determined by the R-tree
+structure and the chosen level; see~[2] for details.
 
-@f[
-    |||\cdot ||| = \Bigl(||\cdot||_{0,\Omega}^2 + \sum_{F \in
-    \mathbb{F}}||c_F^{\frac{1}{2}}[\cdot] ||_{0,F}^2
-    \Bigr)^{\frac{1}{2}}
-@f]
 
-(well defined on $H^1(\Omega) + V_h$) and moreover we have the a-priori bound:
 
-@f[
-|||u-u_h||| \leq C h^{k+\frac{1}{2}}||u||_{k+1,\Omega} 
-@f]
+The following images illustrate the R-tree-based agglomeration on a
+structured fine mesh:
 
-valid for $u \in H^{k+1}(\Omega)$.
+![Fine mesh](./doc/images/grid_raw.png)
+![R-tree blocks on the fine mesh](./doc/images/grid_raw_rtree.png)
+![R-tree structure](./doc/images/tree_structure.png)
 
-See Brezzi-Marini-Süli [3] for more details.
+From left to right, these plots show the original fine mesh, the blocks
+induced by the R-tree on the cell bounding boxes, and the corresponding
+tree structure.
 
-## A-posteriori error estimator:
 
-The estimator is the one proposed by Georgoulis, Edward Hall and Charalambos Makridakis in [3]. This approach is quite different with respect to other works in the field, as the authors are trying to develop an estimator for the original hyperbolic problem, rather than taking the hyperbolic regime as the vanishing diffusivity limit.
-
-The reliability is:
-
-@f[
-|||u-u_h|||^2 \leq  C || \sqrt{b \cdot n}[u_h]||_{\Gamma^{-}}^2 + C
-\sum_{T \in \mathbb{T}_h}\Bigl( ||\beta (g-u_h^+)||_{\partial_{-}T
-\cap \partial_{-} \Omega}^2 +||f-c u_h - \Pi(f- cu_h)||_T^2 \Bigr)
-@f]
-
-where:
-
-- $\Pi$ is the (local) $L^2$ orthogonal projection onto $V_h$
-
-- $\Gamma$ is the skeleton of the mesh
-
-- $c$ is constant
-
-- $\beta = |b \cdot n|$
-
-- $u_h^+$ is the interior trace from the current cell $T$ of a the finite element function $u_h$.
 
 ## Test case:
 
-The following test case has been taken from [3]. Consider:
-- $c=1$ 
-- $b=(1,1)$ 
-- $f$ to be such that the exact solution is $u(x,y)=\tanh(100(x+y-\frac{1}{2}))$
-This solution has an internal layer along the line $y=\frac{1}{2} -x$, hence we would like to see that part of the domain to be much more refined than the rest.
+We consider the Poisson problem on the unit square $\Omega = (0,1)^2$
+with the manufactured exact solution
+@f[
+  u(x,y) = \sin(\pi x)\sin(\pi y).
+@f]
+The corresponding right-hand side is
+@f[
+  f(x,y) = 2\pi^2 \sin(\pi x)\sin(\pi y).
+@f]
+This manufactured solution allows us to compute the global
+$L^2$- and $H^1$-seminorm errors of the discrete solution in order to
+assess the quality of the numerical approximation.
 
-The next image is the 3D view of the numerical solution:
+In this example, an unstructured fine mesh (e.g., a triangular mesh) is
+used as the starting point. Agglomerates are then constructed by METIS
+and by the R-tree strategy, leading to different polytopal meshes. The
+following images compare the resulting agglomerates for two different
+numbers of agglomerates:
 
-![Screenshot](./doc/images/warp_by_scalar_solution_layer.png)
+![METIS, 91 agglomerates](./doc/images/polygonmetis_91.png)
+![METIS, 364 agglomerates](./doc/images/polygonmetis_364.png)
+![R-tree, 91 agglomerates](./doc/images/polygonrtree_91.png)
+![R-tree, 364 agglomerates](./doc/images/polygonrtree_364.png)
 
-More interestingly, we see that the estimator has been able to capture the layer. Here a bulk-chasing criterion is used, with bottom fraction ´0.5´ and no coarsening. This mesh is obtained after 12 refinement cycles.
-![Screenshot](./doc/images/refined_mesh_internal_layer.png)
+These plots illustrate how the two strategies distribute and shape the
+agglomerates on the same underlying unstructured mesh.
 
-If we look at the decrease of the energy norm of the error in the globally refined case and in the adaptively case, with respect to the DoFs, we obtain:
+The corresponding error curves are shown below:
 
-![Screenshot](./doc/images/adaptive_vs_global_refinement.png)
+![Convergence test results](./doc/images/test_result.png)
+
+The figure reports the $L^2$- and $H^1$-seminorm errors with respect to
+the manufactured solution $u$. Optimal convergence rates are observed
+for all polynomial degrees and for both agglomeration strategies. In
+addition, the curves associated with the R-tree approach are consistently
+lower than or comparable to those obtained with METIS-based partitioning.
+
+The construction of an R-tree spatial index on an arbitrary fine grid
+provides a natural and efficient agglomeration strategy with the
+following features:
+
+- fully automated, robust, and dimension-independent;
+- it produces a balanced and nested hierarchy of agglomerates;
+- the shape of the agglomerates closely follows their axis-aligned
+  bounding boxes.
+
+These properties make the R-tree approach an attractive alternative to
+graph-based agglomeration methods (see [3] for more details).
+
 
 ## References 
-* [1] Emmanuil H. Georgoulis, Edward Hall and Charalambos Makridakis (2013), Error Control for Discontinuous Galerkin Methods for First Order Hyperbolic Problems. DOI: [10.1007/978-3-319-01818-8_8
-](https://link.springer.com/chapter/10.1007%2F978-3-319-01818-8_8)
-* [2] Di Pietro, Daniele Antonio and Ern, Alexandre (2012), Mathematical Aspects of Discontinuous Galerkin Methods. ISBN: [978-3-642-22980-0](https://www.springer.com/gp/book/9783642229794)
-* [3] Franco Brezzi, Luisa Donatella Marini and Endre Süli (2004) Discontinuous Galerkin Methods for First-Order Hyperbolic Problems. DOI: [10.1142/S0218202504003866](https://doi.org/10.1142/S0218202504003866)
+* [1] Di Pietro, Daniele Antonio and Ern, Alexandre (2012), Mathematical Aspects of Discontinuous Galerkin Methods. ISBN: [978-3-642-22980-0](https://www.springer.com/gp/book/9783642229794)
+* [2] Marco Feder, Andrea Cangiani and Luca Heltai (2025), R3MG: R-tree based agglomeration of polytopal grids with applications to multilevel methods. DOI: [10.1016/j.jcp.2025.113773](https://doi.org/10.1016/j.jcp.2025.113773)
+* [3] George Karypis and Vipin Kumar, A fast and high quality multilevel scheme for partitioning irregular graphs. DOI: [10.1137/S1064827595287997](https://doi.org/10.1137/S1064827595287997)
+
