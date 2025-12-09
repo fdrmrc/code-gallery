@@ -23,7 +23,7 @@ on the command line.
 
 
 
-## SIPG discretization on agglomerated polytopal meshes:
+## Problem description:
 
 We consider the Poisson problem in a bounded, simply connected domain
 $\Omega \subset \mathbb{R}^d$, $d = 2,3$.
@@ -45,7 +45,7 @@ $u = u_D$ on $\partial\Omega$ such that
 @f}
 
 
-## Discretization Scheme:
+## SIPG discretization on agglomerated polytopal meshes:
 
 We discretize the weak formulation by a symmetric interior penalty
 discontinuous Galerkin (SIPG) method on the agglomerated polytopal mesh
