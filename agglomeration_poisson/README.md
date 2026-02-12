@@ -39,8 +39,7 @@ The corresponding weak formulation is: find $u \in H^1(\Omega)$ with
 $u = u_D$ on $\partial\Omega$ such that
 @f{equation}
   \int_{\Omega} \nabla u \cdot \nabla v \,\mathrm d\mathbf{x}
-  =
-  \int_{\Omega} f\, v \,\mathrm d\mathbf{x}
+  =\int_{\Omega} f\, v \,\mathrm d\mathbf{x}
   \qquad \text{for all } v \in H_0^1(\Omega).
 @f}
 
@@ -142,7 +141,6 @@ METIS into a prescribed number of parts, and each part defines one
 agglomerate; see~[3] for details.
 
 ### R-tree geometric partitioning 
-
 In the `rtree` option, axis-aligned bounding boxes of all fine cells are
 inserted into a spatial R-tree. Agglomerates are obtained by grouping the
 cells whose bounding boxes belong to the same node at a user-selected
