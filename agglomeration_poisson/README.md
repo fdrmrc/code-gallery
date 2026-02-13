@@ -26,7 +26,7 @@ on the command line.
 ## Problem description:
 
 We consider the Poisson problem in a bounded, simply connected domain
-$\Omega \subset \mathbb{R}^d$, $d = 2,3$.
+@f$\Omega \subset \mathbb{R}^d @f$, @f$d = 2,3@f$.
 The strong formulation reads
 @f{align*}
   -\Delta u &= f  && \text{in } \Omega, \\
