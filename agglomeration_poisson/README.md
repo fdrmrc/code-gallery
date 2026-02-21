@@ -32,11 +32,11 @@ The strong formulation reads
   -\Delta u &= f  && \text{in } \Omega, \\
            u &= u_D && \text{on } \partial\Omega,
 @f}
-where the right-hand side satisfies $f \in L^2(\Omega)$ and the prescribed
-Dirichlet data satisfy $u_D \in H^{1/2}(\partial\Omega)$.
+where the right-hand side satisfies @f$f \in L^2(\Omega) @f$ and the prescribed
+Dirichlet data satisfy @f$u_D \in H^{1/2}(\partial\Omega) @f$.
 
-The corresponding weak formulation is: find $u \in H^1(\Omega)$ with
-$u = u_D$ on $\partial\Omega$ such that
+The corresponding weak formulation is: find @f$u \in H^1(\Omega)@f$ with
+@f$u = u_D @f$ on @f$\partial\Omega @f$ such that
 @f{equation}
   \int_{\Omega} \nabla u \cdot \nabla v \,\mathrm d\mathbf{x}
   =\int_{\Omega} f\, v \,\mathrm d\mathbf{x}
@@ -48,8 +48,8 @@ $u = u_D$ on $\partial\Omega$ such that
 
 We discretize the weak formulation by a symmetric interior penalty
 discontinuous Galerkin (SIPG) method on the agglomerated polytopal mesh
-$\mathcal T_h$, whose elements $K \in \mathcal T_h$ are mutually disjoint
-open polygons (for $d=2$) or polyhedra (for $d=3$).
+@f$\mathcal T_h @f$, whose elements @f$K \in \mathcal{T}_h @f$ are mutually disjoint
+open polygons (for @f$d=2 @f$) or polyhedra (for @f$d=3 @f$).
 For each element we denote its diameter by
 @f[
   h_K := \operatorname{diam}(K).
@@ -58,16 +58,16 @@ The mesh skeleton is given by
 @f[
   \Gamma := \bigcup_{K \in \mathcal T_h} \partial K,
 @f]
-and we denote by $\Gamma_{\mathrm{int}}$ the union of interior faces,
-while $\Gamma_{\mathrm D} := \Gamma \cap \partial\Omega$ collects the
+and we denote by @f$\Gamma_{\mathrm{int}} @f$ the union of interior faces,
+while @f$\Gamma_{\mathrm D} := \Gamma \cap \partial\Omega @f$ collects the
 Dirichlet boundary faces.
 
-The discrete space $V_h$ consists of element-wise polynomials of degree
-at most $p$ on each $K \in \mathcal T_h$. For $u_h, v_h \in V_h$ we use
-the broken gradient $\nabla_h$ and the standard jump and average
-operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces.
+The discrete space @f$V_h @f$ consists of element-wise polynomials of degree
+at most $p$ on each @f$K \in \mathcal T_h @f$. For @f$u_h, v_h \in V_h @f$ we use
+the broken gradient @f$\nabla_h @f$ and the standard jump and average
+operators @f$[\![\cdot]\!]@f$ and @f$\{\!\!\{\cdot\}\!\!\}@f$ on faces.
 
-The DG formulation reads: find $u_h \in V_h$ such that
+The DG formulation reads: find @f$u_h \in V_h @f$ such that
 @f{equation}
   B(u_h,v_h) = l(v_h)
   \qquad \forall\, v_h \in V_h,
@@ -109,13 +109,13 @@ The penalty parameter is chosen as
       \text{if } \mathbf x \in \Gamma_{\mathrm{int}},
   \end{cases}
 @f}
-where $h_K^\pm$ are the diameters of the two elements sharing the
-interior face, $p$ is the polynomial degree, and we fix $C_\sigma = 10$ in this program.
+where @f$h_K^\pm @f$ are the diameters of the two elements sharing the
+interior face, $p$ is the polynomial degree, and we fix @f$C_\sigma = 10 @f$ in this program.
 
 This scheme is well posed and admits optimal-order a priori error
-estimates. More precisely, assuming that $u|_K \in H^{s+1}(K)$ for all
-$K \in \mathcal T_h$ and some $1 \le s \le p$, there exists a constant
-$C > 0$, independent of $h$, such that
+estimates. More precisely, assuming that @f$u|_K \in H^{s+1}(K) @f$ for all
+@f$K \in \mathcal T_h @f$ and some @f$1 \le s \le p @f$, there exists a constant
+@f$C > 0 @f$, independent of @f$h @f$, such that
 @f[
   \|u - u_h\|_{L^2(\Omega)}
   \le C\, h^{s+1} \, |u|_{H^{s+1}(\Omega)},
@@ -154,9 +154,11 @@ structure and the chosen level; see~[2] for details.
 The following images illustrate the R-tree-based agglomeration on a
 structured fine mesh:
 
-![Fine mesh](./doc/images/grid_raw.png)
-![R-tree blocks on the fine mesh](./doc/images/grid_raw_rtree.png)
-![R-tree structure](./doc/images/tree_structure.png)
+<div align="center">
+<img src="./doc/images/grid_raw.png" width="220">
+<img src="./doc/images/grid_raw_rtree.png" width="250">
+<img src="./doc/images/tree_structure.png" width="550">
+</div>
 
 From left to right, these plots show the original fine mesh, the blocks
 induced by the R-tree on the cell bounding boxes, and the corresponding
@@ -166,7 +168,7 @@ tree structure.
 
 ## Test case:
 
-We consider the Poisson problem on the unit square $\Omega = (0,1)^2$
+We consider the Poisson problem on the unit square @f$\Omega = (0,1)^2 @f$
 with the manufactured exact solution
 @f[
   u(x,y) = \sin(\pi x)\sin(\pi y).
@@ -176,7 +178,7 @@ The corresponding right-hand side is
   f(x,y) = 2\pi^2 \sin(\pi x)\sin(\pi y).
 @f]
 This manufactured solution allows us to compute the global
-$L^2$- and $H^1$-seminorm errors of the discrete solution in order to
+@f$L^2 @f$- and @f$H^1 @f$-seminorm errors of the discrete solution in order to
 assess the quality of the numerical approximation.
 
 In this example, an unstructured fine mesh (e.g., a triangular mesh) is
@@ -185,20 +187,32 @@ and by the R-tree strategy, leading to different polytopal meshes. The
 following images compare the resulting agglomerates for two different
 numbers of agglomerates:
 
-![METIS, 91 agglomerates](./doc/images/polygonmetis_91.png)
-![METIS, 364 agglomerates](./doc/images/polygonmetis_364.png)
-![R-tree, 91 agglomerates](./doc/images/polygonrtree_91.png)
-![R-tree, 364 agglomerates](./doc/images/polygonrtree_364.png)
+<h4>Comparison of agglomeration strategies</h4>
+
+<div align="center" style="white-space:nowrap;">
+  <img src="./doc/images/polygonmetis_91.png"
+       style="width:240px; display:inline-block; vertical-align:top; margin-right:18px;">
+  <img src="./doc/images/polygonmetis_364.png"
+       style="width:240px; display:inline-block; vertical-align:top;">
+</div>
+
+<br style="line-height:3px;">
+
+<div align="center" style="white-space:nowrap;">
+  <img src="./doc/images/polygonrtree_91.png"
+       style="width:240px; display:inline-block; vertical-align:top; margin-right:18px;">
+  <img src="./doc/images/polygonrtree_364.png"
+       style="width:240px; display:inline-block; vertical-align:top;">
+</div>
 
 These plots illustrate how the two strategies distribute and shape the
 agglomerates on the same underlying unstructured mesh.
 
 The corresponding error curves are shown below:
+  <img src="./doc/images/test_result.png" width="630">
 
-![Convergence test results](./doc/images/test_result.png)
-
-The figure reports the $L^2$- and $H^1$-seminorm errors with respect to
-the manufactured solution $u$. Optimal convergence rates are observed
+The figure reports the @f$L^2@f$- and @f$H^1 @f$-seminorm errors with respect to
+the manufactured solution @f$u @f$. Optimal convergence rates are observed
 for all polynomial degrees and for both agglomeration strategies. In
 addition, the curves associated with the R-tree approach are consistently
 lower than or comparable to those obtained with METIS-based partitioning.
