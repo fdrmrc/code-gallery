@@ -157,6 +157,7 @@ structured fine mesh:
 <div align="center">
 <img src="./doc/images/grid_raw.png" width="220">
 <img src="./doc/images/grid_raw_rtree.png" width="250">
+<br style="line-height:6px;">
 <img src="./doc/images/tree_structure.png" width="550">
 </div>
 
@@ -209,8 +210,9 @@ These plots illustrate how the two strategies distribute and shape the
 agglomerates on the same underlying unstructured mesh.
 
 The corresponding error curves are shown below:
+<div align="center">
   <img src="./doc/images/test_result.png" width="630">
-
+</div>
 The figure reports the @f$L^2@f$- and @f$H^1 @f$-seminorm errors with respect to
 the manufactured solution @f$u @f$. Optimal convergence rates are observed
 for all polynomial degrees and for both agglomeration strategies. In
