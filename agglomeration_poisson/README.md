@@ -17,9 +17,26 @@ As in the tutorial programs, type
 
 on the command line to configure the program. After that you can compile with `make` and run with either `make run` or using 
 
-`./agglomeration_possion`
+`./agglomeration_poisson`
 
 on the command line. 
+
+
+## Program output
+
+Running the program produces two kinds of output. Terminal output (text summary)
+
+The program prints a short summary including:
+
+- the finite element degree (`FE degree`);
+- the triangulation size (`Size of tria`);
+- the agglomeration construction time (R-tree build time);
+- the number of agglomerated subdomains (`N subdomains`);
+- the number of DoFs per cell;
+- the assembly time;
+- a convergence table with `#DoFs`, `L2 error`, and `H1 error`.
+
+And also the Visualization files (.vtu)
 
 
 
@@ -130,18 +147,13 @@ We refer to [2] for details of the analysis.
 ## Agglomeration strategies
 Agglomeration is a key ingredient for constructing polytopic meshes.
 This program supports two strategies for generating agglomerates,
-corresponding to the choices \texttt{metis} and \texttt{rtree}.
+corresponding to the choices ‘metis’ and ‘rtree’.
 
+### R-tree-based agglomeration
 
-### METIS-based partitioning 
-In the ‘metis’ option, the adjacency graph of the fine mesh is
-constructed with one vertex per cell and edges between face-neighbouring
-cells. This graph is then partitioned by the multilevel graph partitioner
-METIS into a prescribed number of parts, and each part defines one
-agglomerate; see~[3] for details.
+This example implements an R-tree based agglomeration strategy for the construction of nested polytopic meshes. The main goal is to generate a multilevel hierarchy that preserves clear parent-child relationships, so that intergrid transfers remain simple and efficient.
 
-### R-tree geometric partitioning 
-In the `rtree` option, axis-aligned bounding boxes of all fine cells are
+In the ‘rtree’ option, axis-aligned bounding boxes of all fine cells are
 inserted into a spatial R-tree. Agglomerates are obtained by grouping the
 cells whose bounding boxes belong to the same node at a user-selected
 extraction level of the tree. This purely geometric strategy does not
@@ -149,38 +161,19 @@ require external graph partitioners and is typically fast and scalable.
 The number and shape of the agglomerates are determined by the R-tree
 structure and the chosen level; see~[2] for details.
 
-## R-tree data structure
 
-### Basic idea
+#### Basic idea and data structure
 
-An R-tree is a spatial data structure for the dynamic organization of geometric objects.  
-In this example, mesh cells (or cut cells) are represented by their bounding boxes and inserted into an R-tree.
+The approach is based on bounding-box packing and recursive traversal of an R-tree built from the active cells (or cut-cell bounding boxes). It is particularly suitable for multilevel methods, where a nested agglomerated structure is desirable.
 
-This provides a hierarchical geometric partition that can be traversed to construct agglomerated mesh blocks.
-
-### Data representation
+Construct leaf nodes and internal nodes.
 
 - **Leaf nodes** store the geometric objects (here, mesh cells or their bounding boxes).
 - **Internal nodes** store:
   - a pointer (or reference) to a child node,
   - a bounding box that encloses all entries contained in that child subtree.
-
-As a result, each internal node represents a spatial grouping of the objects below it.
-
-### Relevance for agglomeration
-
-Using an R-tree in the agglomeration pipeline has two practical advantages:
-
-- it provides a natural hierarchy over the fine-level mesh entities,
-- it enables geometry-aware grouping through recursive subtree extraction.
-
-This is the key mechanism used later to build nested agglomerated meshes for multilevel methods.
-
-
-## R-tree targets and practical properties
-
-### Design targets
-
+  
+As a result, each internal node represents a spatial grouping of the objects below it. 
 The R-tree is used here as a geometry-aware structure for grouping cell bounding boxes.  
 The main design targets are:
 
@@ -189,35 +182,6 @@ The main design targets are:
 - **Improve compactness**: reduce box perimeters (equivalently, favor more compact boxes).
 
 These criteria improve the spatial quality of the hierarchy and typically lead to better grouping and query behavior.
-
-### Choice of R-tree variant
-
-Several R-tree variants are available.  
-In this implementation, we use an **R\*-tree**, which generally has:
-
-- a slightly higher construction cost,
-- better query performance and spatial organization in practice.
-
-### Practical properties in this example
-
-For the agglomeration workflow considered here, the R-tree-based extraction has the following practical features:
-
-- **Level-independent extraction cost (observed)**: the wall-clock time is approximately constant with respect to the chosen extraction level.
-- **Boost.Geometry backend**: the implementation relies on the `Boost.Geometry` R-tree.
-- **Custom traversal logic**: hierarchy traversal in the form needed for agglomeration is not directly exposed, so a custom node visitor is implemented.
-
-These properties make the R-tree approach convenient for constructing nested agglomerated meshes in multilevel finite element and DG settings.
-
-## R-tree agglomeration strategy
-
-### Overview
-
-This example implements an R-tree based agglomeration strategy for the construction of nested polytopic meshes.  
-The main goal is to generate a multilevel hierarchy that preserves clear parent-child relationships, so that intergrid transfers remain simple and efficient.
-
-The approach is based on bounding-box packing and recursive traversal of an R-tree built from the active cells (or cut-cell bounding boxes). It is particularly suitable for multilevel methods, where a nested agglomerated structure is desirable.
-
-### Key idea
 
 Given a collection of cells (or cut-cell bounding boxes), we:
 
@@ -228,9 +192,54 @@ Given a collection of cells (or cut-cell bounding boxes), we:
 
 This produces a sequence of nested agglomerated meshes, which can be used in multilevel solvers and preconditioners.
 
-### Algorithmic pipeline
 
-Let $\mathcal T_k$ denote the agglomerated mesh sequence.
+<div align="center">
+  <img src="./doc/images/rtree_example.png" width="250">
+  <img src="./doc/images/Tree_A_F.png" width="280">
+  <br>
+  <span style="display:inline-block; width:250px;"><em>(a) Examples of MBRs holding geometric data and their MBRs</em></span>
+  <span style="display:inline-block; width:200px;"><em>(b) Corresponding R-tree data structure elements</em></span>
+  <br>
+</div>
+
+#### Design targets and practical properties
+
+
+
+##### Practical properties in this example
+
+For the agglomeration workflow considered here, the R-tree-based extraction has the following practical features:
+
+- **Level-independent extraction cost (observed)**: the wall-clock time is approximately constant with respect to the chosen extraction level.
+- **Boost.Geometry backend**: the implementation relies on the `Boost.Geometry` R-tree.
+- **Custom traversal logic**: hierarchy traversal in the form needed for agglomeration is not directly exposed, so a custom node visitor is implemented.
+
+These properties make the R-tree approach convenient for constructing nested agglomerated meshes in multilevel finite element and DG settings.
+
+The following images illustrate the R-tree-based agglomeration on a
+structured fine mesh:
+
+<div align="center">
+  <img src="./doc/images/grid_raw.png" width="250">
+  <img src="./doc/images/grid_raw_rtree.png" width="280">
+  <br>
+  <span style="display:inline-block; width:250px;"><em>(a) Original 8x8 mesh</em></span>
+  <span style="display:inline-block; width:300px;"><em>(b) Bounding boxes and mesh elements</em></span>
+  <br>
+  <img src="./doc/images/tree_structure.png" width="550">
+  <br>
+  <em>(c) Tree hierarchy: root node, internal nodes, and leaf nodes from top to bottom (only two child subtrees of the root are shown for clarity)</em>
+  <br>
+</div>
+
+
+From left to right, these plots show the original fine mesh, the blocks
+induced by the R-tree on the cell bounding boxes, and the corresponding
+tree structure.
+
+#### Algorithmic pipeline
+
+Let $\mathcal{T}_k$ denote the agglomerated mesh sequence.
 
 - **Step 1: Build the R-tree**  
   Construct an R-tree from the set of bounding boxes associated with the fine-level cells.
@@ -246,60 +255,20 @@ Let $\mathcal T_k$ denote the agglomerated mesh sequence.
 
 This yields a nested hierarchy with natural parent-child relations across levels.
 
+Using an R-tree in the agglomeration pipeline has two practical advantages:
 
-The R-tree construction provides a hierarchy by design, which gives:
+- it provides a natural hierarchy over the fine-level mesh entities,
+- it enables geometry-aware grouping through recursive subtree extraction.
 
-- **Nested agglomerated meshes** ${\mathcal{T}_k}$,
-- **Consistent parent-child relations** between levels,
-- **Cheap intergrid transfer operators**, often implemented via canonical injection between nested spaces.
-
-These properties are especially attractive for multilevel finite element and DG frameworks.
-
-The following images illustrate the R-tree-based agglomeration on a
-structured fine mesh:
-
-<div align="center">
-  <img src="./doc/images/grid_raw.png" width="220">
-  <img src="./doc/images/grid_raw_rtree.png" width="250">
-  <br>
-  <span style="display:inline-block; width:200px;"><em>(a) Original 8x8 mesh</em></span>
-  <span style="display:inline-block; width:300px;"><em>(b) Bounding boxes and mesh elements</em></span>
-  <br>
-  <img src="./doc/images/tree_structure.png" width="550">
-  <br>
-  <em>(c) Tree hierarchy: root node, internal nodes, and leaf nodes from top to bottom (only two child subtrees of the root are shown for clarity)</em>
-  <br>
-</div>
+This is the key mechanism used later to build nested agglomerated meshes for multilevel methods and and DG frameworks.
 
 
-<div align="center">
-  <img src="./doc/images/rtree_example.pdf" width="550">
-  <br>
-  <span style="display:inline-block; width:200px;"><em>(a) Examples of MBRs holding geometric data and their MBRs</em></span>
-  <br>
-  <img src="./doc/images/Tree_A_F.png" width="550">
-  <span style="display:inline-block; width:300px;"><em>(b) Corresponding R-tree data structure elements</em></span>
-  <br>
-</div>
-
-
-From left to right, these plots show the original fine mesh, the blocks
-induced by the R-tree on the cell bounding boxes, and the corresponding
-tree structure.
-
-
-### Comparison with METIS
-
-In this code gallery example, we compare the R-tree based strategy with a METIS-based agglomeration workflow.
-
-The comparison focuses on:
-
-- mesh hierarchy structure,
-- quality and shape of agglomerates,
-- preservation of nestedness,
-- practical implications for multilevel transfer and solver design.
-
-METIS is a widely used graph partitioning tool and a strong baseline for agglomeration. The R-tree strategy is not intended as a replacement in all settings, but as a geometry-aware alternative that naturally supports nested multilevel constructions.
+### METIS-based partitioning 
+In the ‘metis’ option, the adjacency graph of the fine mesh is
+constructed with one vertex per cell and edges between face-neighbouring
+cells. This graph is then partitioned by the multilevel graph partitioner
+METIS into a prescribed number of parts, and each part defines one
+agglomerate; see~[3] for details.
 
 
 ## Test case:
@@ -350,9 +319,13 @@ numbers of agglomerates:
 These plots illustrate how the two strategies distribute and shape the
 agglomerates on the same underlying unstructured mesh.
 
+
+
 The corresponding error curves are shown below:
 <div align="center">
   <img src="./doc/images/test_result.png" width="630">
+  <br>
+  <span style="display:inline-block; width:200px;"><em>(c) R-tree, extraction_level = 4</em></span>
 </div>
 The figure reports the @f$L^2@f$- and @f$H^1 @f$-seminorm errors with respect to
 the manufactured solution @f$u @f$. Optimal convergence rates are observed
@@ -371,6 +344,7 @@ following features:
 
 These properties make the R-tree approach an attractive alternative to
 graph-based agglomeration methods (see [3] for more details).
+
 
 
 ## References 
