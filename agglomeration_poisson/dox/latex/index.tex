@@ -1,0 +1,110 @@
+\chapter{A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration }
+\hypertarget{index}{}\label{index}\index{A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration@{A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration}}
+\label{index_md__r_e_a_d_m_e}%
+\Hypertarget{index_md__r_e_a_d_m_e}%
+
+
+This program solves a Poisson problem on an agglomerated polytopal mesh using a symmetric interior penalty discontinuous Galerkin (SIPG) method. Agglomerates are constructed by an R-\/tree–based spatial indexing strategy, following the approach proposed in \+[2]\+. In addition, a graph-\/based METIS partitioner is also provided in this program for comparison.\hypertarget{index_autotoc_md1}{}\doxysection{\texorpdfstring{Running the code:\+}{Running the code:\+}}\label{index_autotoc_md1}
+As in the tutorial programs, type
+
+{\ttfamily cmake -\/DDEAL\+\_\+\+II\+\_\+\+DIR=/\+path/\+to/\+deal.II .}
+
+on the command line to configure the program. After that you can compile with {\ttfamily make} and run with either {\ttfamily make run} or using
+
+{\ttfamily ./\+agglomeration\+\_\+possion}
+
+on the command line.\hypertarget{index_autotoc_md2}{}\doxysection{\texorpdfstring{Problem description:\+}{Problem description:\+}}\label{index_autotoc_md2}
+We consider the Poisson problem in a bounded, simply connected domain \$\textbackslash{}\+Omega \textbackslash{}subset \textbackslash{}mathbb\{R\}\texorpdfstring{$^\wedge$}{\string^}d\$, \$d = 2,3\$. The strong formulation reads    \begin{align*}  -\Delta u &= f  && \text{in } \Omega, \\
+           u &= u_D && \text{on } \partial\Omega,
+\end{align*} where the right-\/hand side satisfies \$f \textbackslash{}in L\texorpdfstring{$^\wedge$}{\string^}2(\textbackslash{}\+Omega)\$ and the prescribed Dirichlet data satisfy \$u\+\_\+D \textbackslash{}in H\texorpdfstring{$^\wedge$}{\string^}\{1/\+2\}(\textbackslash{}partial\textbackslash{}\+Omega)\$.
+
+The corresponding weak formulation is:\+ find \$u \textbackslash{}in H\texorpdfstring{$^\wedge$}{\string^}1(\textbackslash{}\+Omega)\$ with \$u = u\+\_\+\+D\$ on \$\textbackslash{}partial\textbackslash{}\+Omega\$ such that      \begin{equation}  \int_{\Omega} \nabla u \cdot \nabla v \,\mathrm d\mathbf{x}
+  =
+  \int_{\Omega} f\, v \,\mathrm d\mathbf{x}
+  \qquad \text{for all } v \in H_0^1(\Omega).
+\end{equation}\hypertarget{index_autotoc_md3}{}\doxysection{\texorpdfstring{SIPG discretization on agglomerated polytopal meshes:\+}{SIPG discretization on agglomerated polytopal meshes:\+}}\label{index_autotoc_md3}
+We discretize the weak formulation by a symmetric interior penalty discontinuous Galerkin (SIPG) method on the agglomerated polytopal mesh \$\textbackslash{}mathcal T\+\_\+h\$, whose elements \$K \textbackslash{}in \textbackslash{}mathcal T\+\_\+h\$ are mutually disjoint open polygons (for \$d=2\$) or polyhedra (for \$d=3\$). For each element we denote its diameter by   \[  h_K := \operatorname{diam}(K).
+\] The mesh skeleton is given by   \[  \Gamma := \bigcup_{K \in \mathcal T_h} \partial K,
+\] and we denote by \$\textbackslash{}\+Gamma\+\_\+\{\textbackslash{}mathrm\{int\}\}\$ the union of interior faces, while \$\textbackslash{}\+Gamma\+\_\+\{\textbackslash{}mathrm D\} :\+= \textbackslash{}\+Gamma \textbackslash{}cap \textbackslash{}partial\textbackslash{}\+Omega\$ collects the Dirichlet boundary faces.
+
+The discrete space \$\+V\+\_\+h\$ consists of element-\/wise polynomials of degree at most \$p\$ on each \$K \textbackslash{}in \textbackslash{}mathcal T\+\_\+h\$. For \$u\+\_\+h, v\+\_\+h \textbackslash{}in V\+\_\+h\$ we use the broken gradient \$\textbackslash{}nabla\+\_\+h\$ and the standard jump and average operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces.
+
+The DG formulation reads:\+ find \$u\+\_\+h \textbackslash{}in V\+\_\+h\$ such that    \begin{equation}  B(u_h,v_h) = l(v_h)
+  \qquad \forall\, v_h \in V_h,
+\end{equation} with                \begin{align*}  B(u_h,v_h)
+  &=
+  \int_{\Omega} \nabla_h u_h \cdot \nabla_h v_h \,\mathrm d\mathbf{x}
+  \\
+  &\quad
+  - \int_{\Gamma}
+    \Bigl(
+      \{\!\!\{\nabla u_h\}\!\!\} \cdot [\![v_h]\!]
+      +
+      \{\!\!\{\nabla v_h\}\!\!\} \cdot [\![u_h]\!]
+    \Bigr)\,\mathrm d s
+  \\
+  &\quad
+  + \int_{\Gamma} \sigma \,[\![u_h]\!] \cdot [\![v_h]\!] \,\mathrm d s,
+\end{align*} and        \begin{equation}  l(v_h)
+  =
+  \int_\Omega f\, v_h \,\mathrm d\mathbf{x}
+  +
+  \int_{\Gamma_{\mathrm D}}
+    u_D \bigl(\sigma v_h - \nabla v_h \cdot \mathbf n\bigr)\,\mathrm d s.
+\end{equation}
+
+The penalty parameter is chosen as         \begin{equation}  \sigma(\mathbf x) = C_\sigma
+  \begin{cases}
+    \dfrac{p^2}{h_K}, &
+      \text{if } \mathbf x \in \partial K \cap \partial\Omega, \\[0.5em]
+    \dfrac{p^2}{\min\{h_K^+,h_K^-\}}, &
+      \text{if } \mathbf x \in \Gamma_{\mathrm{int}},
+  \end{cases}
+\end{equation} where \$h\+\_\+K\texorpdfstring{$^\wedge$}{\string^}\textbackslash{}pm\$ are the diameters of the two elements sharing the interior face, \$p\$ is the polynomial degree, and we fix \$\+C\+\_\+\textbackslash{}sigma = 10\$ in this program.
+
+This scheme is well posed and admits optimal-\/order a priori error estimates. More precisely, assuming that \$u\texorpdfstring{$\vert$}{|}\+\_\+K \textbackslash{}in H\texorpdfstring{$^\wedge$}{\string^}\{s+1\}(K)\$ for all \$K \textbackslash{}in \textbackslash{}mathcal T\+\_\+h\$ and some \$1 \textbackslash{}le s \textbackslash{}le p\$, there exists a constant \$C \texorpdfstring{$>$}{>} 0\$, independent of \$h\$, such that    \[  \|u - u_h\|_{L^2(\Omega)}
+  \le C\, h^{s+1} \, |u|_{H^{s+1}(\Omega)},
+\] and    \[  \|\nabla(u - u_h)\|_{L^2(\Omega)}
+  \le C\, h^{s} \, |u|_{H^{s+1}(\Omega)}.
+\] We refer to \+[2]\+ for details of the analysis.\hypertarget{index_autotoc_md4}{}\doxysection{\texorpdfstring{Agglomeration strategies}{Agglomeration strategies}}\label{index_autotoc_md4}
+Agglomeration is a key ingredient for constructing polytopic meshes. This program supports two strategies for generating agglomerates, corresponding to the choices \textbackslash{}texttt\{metis\} and \textbackslash{}texttt\{rtree\}.\hypertarget{index_autotoc_md5}{}\doxysubsection{\texorpdfstring{METIS-\/based partitioning}{METIS-\/based partitioning}}\label{index_autotoc_md5}
+In the \textbackslash{}emph\{metis\} option, the adjacency graph of the fine mesh is constructed with one vertex per cell and edges between face-\/neighbouring cells. This graph is then partitioned by the multilevel graph partitioner METIS into a prescribed number of parts, and each part defines one agglomerate; see\texorpdfstring{$\sim$}{\string~}\+[3]\+ for details.\hypertarget{index_autotoc_md6}{}\doxysubsection{\texorpdfstring{R-\/tree geometric partitioning}{R-\/tree geometric partitioning}}\label{index_autotoc_md6}
+In the {\ttfamily rtree} option, axis-\/aligned bounding boxes of all fine cells are inserted into a spatial R-\/tree. Agglomerates are obtained by grouping the cells whose bounding boxes belong to the same node at a user-\/selected extraction level of the tree. This purely geometric strategy does not require external graph partitioners and is typically fast and scalable. The number and shape of the agglomerates are determined by the R-\/tree structure and the chosen level; see\texorpdfstring{$\sim$}{\string~}\+[2]\+ for details.
+
+The following images illustrate the R-\/tree-\/based agglomeration on a structured fine mesh:\+
+
+  
+
+From left to right, these plots show the original fine mesh, the blocks induced by the R-\/tree on the cell bounding boxes, and the corresponding tree structure.\hypertarget{index_autotoc_md7}{}\doxysection{\texorpdfstring{Test case:\+}{Test case:\+}}\label{index_autotoc_md7}
+We consider the Poisson problem on the unit square \$\textbackslash{}\+Omega = (0,1)\texorpdfstring{$^\wedge$}{\string^}2\$ with the manufactured exact solution   \[  u(x,y) = \sin(\pi x)\sin(\pi y).
+\] The corresponding right-\/hand side is   \[  f(x,y) = 2\pi^2 \sin(\pi x)\sin(\pi y).
+\] This manufactured solution allows us to compute the global \$L\texorpdfstring{$^\wedge$}{\string^}2\$-\/ and \$H\texorpdfstring{$^\wedge$}{\string^}1\$-\/seminorm errors of the discrete solution in order to assess the quality of the numerical approximation.
+
+In this example, an unstructured fine mesh (e.\+g., a triangular mesh) is used as the starting point. Agglomerates are then constructed by METIS and by the R-\/tree strategy, leading to different polytopal meshes. The following images compare the resulting agglomerates for two different numbers of agglomerates:\+
+
+   
+
+These plots illustrate how the two strategies distribute and shape the agglomerates on the same underlying unstructured mesh.
+
+The corresponding error curves are shown below:\+
+
+
+
+The figure reports the \$L\texorpdfstring{$^\wedge$}{\string^}2\$-\/ and \$H\texorpdfstring{$^\wedge$}{\string^}1\$-\/seminorm errors with respect to the manufactured solution \$u\$. Optimal convergence rates are observed for all polynomial degrees and for both agglomeration strategies. In addition, the curves associated with the R-\/tree approach are consistently lower than or comparable to those obtained with METIS-\/based partitioning.
+
+The construction of an R-\/tree spatial index on an arbitrary fine grid provides a natural and efficient agglomeration strategy with the following features:\+
+
+
+\begin{DoxyItemize}
+\item fully automated, robust, and dimension-\/independent;
+\item it produces a balanced and nested hierarchy of agglomerates;
+\item the shape of the agglomerates closely follows their axis-\/aligned bounding boxes.
+\end{DoxyItemize}
+
+These properties make the R-\/tree approach an attractive alternative to graph-\/based agglomeration methods (see \+[3]\+ for more details).\hypertarget{index_autotoc_md8}{}\doxysection{\texorpdfstring{References}{References}}\label{index_autotoc_md8}
+
+\begin{DoxyItemize}
+\item \+[1]\+ Di Pietro, Daniele Antonio and Ern, Alexandre (2012), Mathematical Aspects of Discontinuous Galerkin Methods. ISBN:\+ \href{https://www.springer.com/gp/book/9783642229794}{\texttt{978-\/3-\/642-\/22980-\/0}}
+\item \+[2]\+ Marco Feder, Andrea Cangiani and Luca Heltai (2025), R3\+MG:\+ R-\/tree based agglomeration of polytopal grids with applications to multilevel methods. DOI:\+ \href{https://doi.org/10.1016/j.jcp.2025.113773}{\texttt{10.\+1016/\+j.jcp.\+2025.\+113773}}
+\item \+[3]\+ George Karypis and Vipin Kumar, A fast and high quality multilevel scheme for partitioning irregular graphs. DOI:\+ \href{https://doi.org/10.1137/S1064827595287997}{\texttt{10.\+1137/\+\+S1064827595287997}} 
+\end{DoxyItemize}

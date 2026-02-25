@@ -1,0 +1,12 @@
+PROJECT_NAME           = "README preview"
+OUTPUT_DIRECTORY       = dox_readme
+GENERATE_HTML          = YES
+MARKDOWN_SUPPORT       = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+
+INPUT                  = README.md doc
+IMAGE_PATH             = doc/images
+
+RECURSIVE              = NO
+QUIET                  = YES
+USE_MATHJAX            = YES
