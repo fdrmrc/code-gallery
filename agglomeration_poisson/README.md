@@ -24,7 +24,10 @@ on the command line.
 
 ## Program output
 
-Running the program produces two kinds of output. Terminal output (text summary)
+Running the program produces two kinds of output:
+
+- terminal output (text summary),
+- visualization files (`.vtu`).
 
 The program prints a short summary including:
 
@@ -36,9 +39,16 @@ The program prints a short summary including:
 - the assembly time;
 - a convergence table with `#DoFs`, `L2 error`, and `H1 error`.
 
-And also the Visualization files (.vtu)
+The program writes two `.vtu` files for each run:
 
+- `grid_<partitioner>_<n_subdomains>.vtu`, containing the agglomerated mesh
+  partition information (cell-wise agglomeration labels);
+- `interpolated_solution_<partitioner>_<n_subdomains>.vtu`, containing the
+  numerical solution interpolated to the fine grid together with agglomerate
+  labels for visualization.
 
+These files can be visualized in ParaView to inspect both the agglomeration
+structure and the computed solution.
 
 ## Problem description:
 
@@ -202,12 +212,6 @@ This produces a sequence of nested agglomerated meshes, which can be used in mul
   <br>
 </div>
 
-#### Design targets and practical properties
-
-
-
-##### Practical properties in this example
-
 For the agglomeration workflow considered here, the R-tree-based extraction has the following practical features:
 
 - **Level-independent extraction cost (observed)**: the wall-clock time is approximately constant with respect to the chosen extraction level.
@@ -215,27 +219,6 @@ For the agglomeration workflow considered here, the R-tree-based extraction has 
 - **Custom traversal logic**: hierarchy traversal in the form needed for agglomeration is not directly exposed, so a custom node visitor is implemented.
 
 These properties make the R-tree approach convenient for constructing nested agglomerated meshes in multilevel finite element and DG settings.
-
-The following images illustrate the R-tree-based agglomeration on a
-structured fine mesh:
-
-<div align="center">
-  <img src="./doc/images/grid_raw.png" width="250">
-  <img src="./doc/images/grid_raw_rtree.png" width="280">
-  <br>
-  <span style="display:inline-block; width:250px;"><em>(a) Original 8x8 mesh</em></span>
-  <span style="display:inline-block; width:300px;"><em>(b) Bounding boxes and mesh elements</em></span>
-  <br>
-  <img src="./doc/images/tree_structure.png" width="550">
-  <br>
-  <em>(c) Tree hierarchy: root node, internal nodes, and leaf nodes from top to bottom (only two child subtrees of the root are shown for clarity)</em>
-  <br>
-</div>
-
-
-From left to right, these plots show the original fine mesh, the blocks
-induced by the R-tree on the cell bounding boxes, and the corresponding
-tree structure.
 
 #### Algorithmic pipeline
 
@@ -261,6 +244,26 @@ Using an R-tree in the agglomeration pipeline has two practical advantages:
 - it enables geometry-aware grouping through recursive subtree extraction.
 
 This is the key mechanism used later to build nested agglomerated meshes for multilevel methods and and DG frameworks.
+
+For example, the following images illustrate the R-tree-based agglomeration on a
+structured fine mesh:
+
+<div align="center">
+  <img src="./doc/images/grid_raw.png" width="250">
+  <img src="./doc/images/grid_raw_rtree.png" width="280">
+  <br>
+  <span style="display:inline-block; width:250px;"><em>(a) Original 8x8 mesh</em></span>
+  <span style="display:inline-block; width:300px;"><em>(b) Bounding boxes and mesh elements</em></span>
+  <br>
+  <img src="./doc/images/tree_structure.png" width="550">
+  <br>
+  <em>(c) Tree hierarchy: root node, internal nodes, and leaf nodes from top to bottom (only two child subtrees of the root are shown for clarity)</em>
+  <br>
+</div>
+
+From left to right, top to bottom, these plots show the original fine mesh, the blocks
+induced by the R-tree on the cell bounding boxes, and the corresponding
+tree structure.
 
 
 ### METIS-based partitioning 
@@ -290,7 +293,7 @@ In this example, an unstructured fine mesh (e.g., a triangular mesh) is
 used as the starting point. Agglomerates are then constructed by METIS
 and by the R-tree strategy, leading to different polytopal meshes. The
 following images compare the resulting agglomerates for two different
-numbers of agglomerates:
+numbers of agglomerates.
 
 <h4>Comparison of agglomeration strategies</h4>
 
