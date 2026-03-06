@@ -1,7 +1,7 @@
-# A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration
+# Polytopic Mesh DG Solver for Poisson
 
 This program solves a Poisson problem on an agglomerated polytopal mesh
-using a symmetric interior penalty discontinuous Galerkin (SIPG) method.
+using a symmetric interior penalty discontinuous Galerkin (SIPDG) method.
 Agglomerates are constructed by an R-tree based spatial indexing
 strategy, following the approach proposed in [2].
 In addition, a graph-based METIS partitioner is also provided in this program for comparison.
@@ -66,26 +66,30 @@ The corresponding weak formulation is: find @f$u \in H^1(\Omega)@f$ with
   \qquad \text{for all } v \in H_0^1(\Omega).
 @f}
 
-## SIPG discretization on agglomerated polytopal meshes:
+## SIPDG discretization on agglomerated polytopic meshes:
 
 We discretize the weak formulation by a symmetric interior penalty
-discontinuous Galerkin (SIPG) method on the agglomerated polytopal mesh
-@f$\mathcal{T}_h @f$, whose elements @f$K \in \mathcal{T}_h @f$ are mutually disjoint
+discontinuous Galerkin (SIPDG) method on the agglomerated polytopal mesh
+@f$T_h @f$, whose elements @f$K \in T_h @f$ are mutually disjoint
 open polygons (for @f$d=2 @f$) or polyhedra (for @f$d=3 @f$).
 For each element we denote its diameter by
-@f[
+@f{align*}
   h_K := \operatorname{diam}(K).
-@f]
-The mesh skeleton is given by
-@f[
-  \Gamma := \bigcup_{K \in \mathcal{T}_h} \partial K,
-@f]
-and we denote by @f$\Gamma_{\mathrm{int}} @f$ the union of interior faces,
-while @f$\Gamma_{\mathrm D} := \Gamma \cap \partial\Omega @f$ collects the
-Dirichlet boundary faces.
+@f}
+The mesh skeleton is defined by
+@f{align*}
+  \Gamma := \bigcup_{K \in T_h} \partial K.
+@f}
+The mesh skeleton @f$\Gamma @f$ is decomposed into @f$(d-1)@f$–dimensional simplices @f$F @f$ denoting the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or @f$\partial \Omega @f$. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only.
+We denote by @f$\Gamma_{\mathrm{int}}@f$ the union of all interior facets, and by
+@f$
+  \Gamma_{\mathrm D} := \Gamma \cap \partial\Omega
+@f$
+the union of Dirichlet boundary facets.
+
 
 The discrete space @f$V_h @f$ consists of element-wise polynomials of degree
-at most $p$ on each @f$K \in \mathcal{T}_h @f$. For @f$u_h, v_h \in V_h @f$ we use
+at most $p$ on each @f$K \in T_h @f$. For @f$u_h, v_h \in V_h @f$ we use
 the broken gradient @f$\nabla_h @f$ and the standard jump and average
 operators @f$[\![\cdot]\!]@f$ and @f$\{\!\!\{\cdot\}\!\!\}@f$ on faces.
 
@@ -363,7 +367,7 @@ mesh (`interpolated_solution_rtree_91.vtu`), rendered with `Surface With Edges`.
 <div align="center">
   <img src="./doc/images/interpolated_solution_rtree_91.png" width="330">
   <br>
-  <span style="display:inline-block; width:700px;"><em>(13) Interpolated solution field `u` on the agglomerated mesh with 91 agglomerates</em></span>
+  <span style="display:inline-block; width:700px;"><em>(13) Interpolated solution field `u`</em></span>
 </div>
 
 The construction of an R-tree spatial index on an arbitrary fine grid

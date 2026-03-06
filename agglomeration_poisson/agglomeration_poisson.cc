@@ -233,7 +233,25 @@ Poisson<dim>::make_grid()
   std::ifstream gmsh_file(std::string(MESH_DIR) +
                           "/unit_square_quad_unstructured.msh");
   grid_in.read_msh(gmsh_file);
+
+   // Write the input mesh (before any refinement), for documentation/figures.
+  {
+    GridOut        grid_out;
+    std::ofstream  out("grid_input_mesh.vtu");
+    grid_out.write_vtu(tria, out);
+  }
+
+  // Refine the mesh to obtain the fine grid used for agglomeration.
   tria.refine_global(2);
+
+  // Write the refined (fine) mesh used as starting point for agglomeration.
+  {
+    GridOut        grid_out;
+    std::ofstream  out("grid_fine_mesh_refined.vtu");
+    grid_out.write_vtu(tria, out);
+   }
+    //  grid_in.read_msh(gmsh_file);
+    //  tria.refine_global(2);
 
   std::cout << "Size of tria: " << tria.n_active_cells() << std::endl;
   cached_tria = std::make_unique<GridTools::Cache<dim>>(tria, mapping);
@@ -341,11 +359,33 @@ Poisson<dim>::setup_agglomeration()
 
     Vector<float> agglomerated(tria.n_active_cells());
     Vector<float> agglo_idx(tria.n_active_cells());
+    std::map<unsigned int, unsigned int> master_to_agglo_id;
+    unsigned int next_id = 0;
+
+    const auto &rel = ah->get_relationships();
+
     for (const auto &cell : tria.active_cell_iterators())
-      {
-        agglomerated[cell->active_cell_index()] =
-          ah->get_relationships()[cell->active_cell_index()];
-        agglo_idx[cell->active_cell_index()] = cell->subdomain_id();
+     {
+        const unsigned int i = cell->active_cell_index();
+        agglomerated[i] = rel[i];
+
+        if (rel[i] == -1) // master
+          master_to_agglo_id[i] = next_id++;
+     }
+
+    for (const auto &cell : tria.active_cell_iterators())
+     {
+        const unsigned int i = cell->active_cell_index();
+
+        if (rel[i] == -1)
+        {
+          agglo_idx[i] = static_cast<float>(master_to_agglo_id[i]);
+        }
+        else
+        {
+          const unsigned int master_i = static_cast<unsigned int>(rel[i]);
+          agglo_idx[i] = static_cast<float>(master_to_agglo_id.at(master_i));
+        }
       }
     data_out.add_data_vector(agglomerated,
                              "agglo_relationships",
@@ -356,6 +396,8 @@ Poisson<dim>::setup_agglomeration()
     data_out.build_patches(mapping);
     data_out.write_vtu(output);
   }
+    
+    
 }
 
 // This function assembles the global DG system on the agglomerated mesh.

@@ -9,6 +9,16 @@
  * -----------------------------------------------------------------------------
  */
 
+/**
+ * @file
+ * Definition of MappingBox: an efficient affine mapping that associates each
+ * active cell with an axis-aligned BoundingBox via a translator map.
+ *
+ * The reference-to-real map is a diagonal scaling (hx,hy,hz) plus translation,
+ * which provides cheap Jacobians and JxW values for FEValues, useful in
+ * agglomerated/polytopal workflows.
+ */
+
 #ifndef dealii_mapping_box_h
 #define dealii_mapping_box_h
 
@@ -32,7 +42,7 @@ DEAL_II_NAMESPACE_OPEN
 
 /**
  * A class providing a mapping from the reference cell to cells that are
- * axiparallel, i.e., that have the shape of rectangles (in 2d) or
+ * axis-parallel, i.e., that have the shape of rectangles (in 2d) or
  * boxes (in 3d) with edges parallel to the coordinate directions. The
  * class therefore provides functionality that is equivalent to what,
  * for example, MappingQ would provide for such cells. However, knowledge
@@ -82,7 +92,6 @@ public:
   // for documentation, see the Mapping base class
   virtual std::unique_ptr<Mapping<dim, spacedim>>
   clone() const override;
-
   /**
    * Return @p true because MappingBox preserves vertex
    * locations.
