@@ -353,46 +353,39 @@ Poisson<dim>::setup_agglomeration()
     const std::string filename =
       "grid_" + partitioner + "_" + std::to_string(n_subdomains) + ".vtu";
     std::ofstream output(filename);
-
+      
+      
     DataOut<dim> data_out;
-    data_out.attach_dof_handler(ah->agglo_dh);
-
-    Vector<float> agglomerated(tria.n_active_cells());
-    Vector<float> agglo_idx(tria.n_active_cells());
-    std::map<unsigned int, unsigned int> master_to_agglo_id;
-    unsigned int next_id = 0;
+    data_out.attach_triangulation(tria);
 
     const auto &rel = ah->get_relationships();
 
+    // master/slave
+    Vector<float> agglo_relationships(tria.n_active_cells());
     for (const auto &cell : tria.active_cell_iterators())
-     {
-        const unsigned int i = cell->active_cell_index();
-        agglomerated[i] = rel[i];
+    {
+     const unsigned int i = cell->active_cell_index();
+     agglo_relationships[i] = rel[i];
+    }
 
-        if (rel[i] == -1) // master
-          master_to_agglo_id[i] = next_id++;
-     }
+    // generate agglo_relationships and agglo_idx
+    Vector<float> agglo_idx(tria.n_active_cells());
 
-    for (const auto &cell : tria.active_cell_iterators())
-     {
-        const unsigned int i = cell->active_cell_index();
+    for (const auto &polytope : ah->polytope_iterators())
+    {
+     const float id = static_cast<float>(polytope->index());
+     const auto &patch_of_cells = polytope->get_agglomerate();
+     for (const auto &cell : patch_of_cells)
+        agglo_idx[cell->active_cell_index()] = id;
+    }
 
-        if (rel[i] == -1)
-        {
-          agglo_idx[i] = static_cast<float>(master_to_agglo_id[i]);
-        }
-        else
-        {
-          const unsigned int master_i = static_cast<unsigned int>(rel[i]);
-          agglo_idx[i] = static_cast<float>(master_to_agglo_id.at(master_i));
-        }
-      }
-    data_out.add_data_vector(agglomerated,
+    data_out.add_data_vector(agglo_relationships,
                              "agglo_relationships",
-                             DataOut<dim>::type_cell_data);
+                               DataOut<dim>::type_cell_data);
     data_out.add_data_vector(agglo_idx,
-                             "agglomerated_idx",
-                             DataOut<dim>::type_cell_data);
+                               "agglo_idx",
+                               DataOut<dim>::type_cell_data);
+
     data_out.build_patches(mapping);
     data_out.write_vtu(output);
   }

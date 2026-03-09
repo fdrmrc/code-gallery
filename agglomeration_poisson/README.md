@@ -81,7 +81,7 @@ The mesh skeleton is defined by
   \Gamma := \bigcup_{K \in T_h} \partial K.
 @f}
 The mesh skeleton @f$\Gamma @f$ is decomposed into @f$(d-1)@f$–dimensional simplices @f$F @f$ denoting the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or @f$\partial \Omega @f$. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only.
-We denote by @f$\Gamma_{\mathrm{int}}@f$ the union of all interior facets, and by
+We denote by @f$\Gamma_{\mathrm{int}}@f$ the union of all interior faces, and by
 @f$
   \Gamma_{\mathrm D} := \Gamma \cap \partial\Omega
 @f$
@@ -136,11 +136,12 @@ The penalty parameter is chosen as
   \end{cases}
 @f}
 where @f$h_K^\pm @f$ are the diameters of the two elements sharing the
-interior face, $p$ is the polynomial degree, and we fix @f$C_\sigma = 10 @f$ in this program.
+interior face, 
+and we fix @f$C_\sigma = 10 @f$ in this program.
 
 This scheme is well posed and admits optimal-order a priori error
 estimates. More precisely, assuming that @f$u|_K \in H^{s+1}(K) @f$ for all
-@f$K \in \mathcal{T}_h @f$ and some @f$1 \le s \le p @f$, there exists a constant
+@f$K \in T_h @f$ and some @f$1 \le s \le p @f$, there exists a constant
 @f$C > 0 @f$, independent of @f$h @f$, such that
 @f[
   \|u - u_h\|_{L^2(\Omega)}
@@ -154,7 +155,7 @@ and
 We refer to~[1] for details of the analysis.
 
 ## Agglomeration strategies
-Agglomeration is a key ingredient for constructing polytopic meshes.
+Agglomeration is a natural mechanism for constructing polytopic meshes.
 This program supports two strategies for generating agglomerates,
 corresponding to the choices `metis` and `rtree`. In this example, we
 mainly focus on the `rtree` strategy, which is the method developed and
@@ -183,12 +184,11 @@ At the data-structure level, we distinguish leaf nodes and internal nodes:
 As a result, each internal node represents a spatial grouping of the objects below it.
 
 #### Design targets
-The R-tree is used here as a geometry-aware structure for grouping cell bounding boxes.
-The main design targets are:
-
+The R-tree is used here as a geometry-aware structure for organizing cell bounding boxes into hierarchical groups.
+Our construction is guided by the classical R*-tree criteria of Beckmann et al. [4], namely:
 - **Minimize box area**: reduce the area covered by each bounding box,
 - **Minimize overlap**: reduce overlap between neighboring boxes,
-- **Improve compactness**: reduce box perimeters (equivalently, favor more compact boxes).
+- **Improve shape-regularity**: reduce box perimeters (equivalently, favor more shape-regular boxes).
 
 These criteria improve the spatial quality of the hierarchy and typically lead to better grouping and query behavior.
 
@@ -274,7 +274,7 @@ In the `metis` option, the adjacency graph of the fine mesh is constructed
 with one vertex per cell and edges between face-neighboring cells.
 This graph is then partitioned by the multilevel graph partitioner METIS
 into a prescribed number of parts, and each part defines one agglomerate;
-see [3] for details.
+see [4] for details.
 
 ## Test case:
 
@@ -291,8 +291,16 @@ This manufactured solution allows us to compute the global
 @f$L^2 @f$- and @f$H^1 @f$-seminorm errors of the discrete solution in order to
 assess the quality of the numerical approximation.
 
-In this example, an unstructured fine mesh (e.g., a triangular mesh) is used as
-the starting point. Agglomerates are then constructed by METIS and by the
+
+In this example, we start from an unstructured initial mesh and then perform two global refinement steps. The resulting meshes are shown below.
+<div align="center">
+  <img src="./doc/images/input_mesh.png" width="280">
+  <img src="./doc/images/mesh_refined.png" width="300">
+  <br>
+  <span style="display:inline-block; width:250px;"><em>(1) Input mesh</em></span>
+  <span style="display:inline-block; width:350px;"><em>(2) Mesh after two global refinements</em></span>
+</div>
+Agglomerates are then constructed by METIS and by the
 R-tree strategy, leading to different polytopal meshes. The following images
 compare the resulting agglomerates on the same underlying mesh for two
 different agglomeration sizes (91 and 364 agglomerates).
@@ -327,7 +335,7 @@ geometry-driven groupings induced by the spatial hierarchy, while METIS
 produces graph-based partitions of the cell adjacency graph.
 
 To assess the discretization accuracy, we next compare the error behavior under
-mesh refinement and polynomial refinement. The plots below are obtained by
+mesh refinement or increasing the polynomial degree. The plots below are obtained by
 collecting the program outputs over multiple runs and post-processing the
 reported error data.
 
@@ -338,15 +346,19 @@ reported error data.
 </div>
 
 The figure reports the \(L^2\)- and \(H^1\)-seminorm errors with respect to the
-manufactured solution \(u\). Optimal convergence rates are observed for all
+manufactured solution. Optimal convergence rates are observed for all
 polynomial degrees and for both agglomeration strategies. In addition, the
-curves associated with the R-tree approach are consistently lower than or
+curves associated with the R-tree approach are marginally lower than or
 comparable to those obtained with METIS-based partitioning.
-
+Below, we provide a more detailed comparison of p-convergence, including both the 
+@f$Q_p @f$  
+  versus 
+@f$P_p @f$ 
+  element choice and the R-tree versus METIS agglomeration strategies.
 <div align="center">
   <img src="./doc/images/p_convergence_compare.png" width="800">
   <br>
-  <span style="display:inline-block; width:700px;"><em>(11) p-convergence comparison for \(Q_p/P_p\) elements (\(p=1,2,3\)) with different agglomeration strategies</em></span>
+  <span style="display:inline-block; width:700px;"><em>(11) p-convergence results for different element types and agglomeration strategies</em></span>
 </div>
 
 In addition to accuracy, the cost of constructing the agglomerated polytopal
@@ -370,19 +382,10 @@ mesh (`interpolated_solution_rtree_91.vtu`), rendered with `Surface With Edges`.
   <span style="display:inline-block; width:700px;"><em>(13) Interpolated solution field `u`</em></span>
 </div>
 
-The construction of an R-tree spatial index on an arbitrary fine grid
-provides a natural and efficient agglomeration strategy with the
-following features:
 
-- fully automated, robust, and dimension-independent;
-- it produces a balanced and nested hierarchy of agglomerates;
-- the shape of the agglomerates closely follows their axis-aligned
-  bounding boxes.
-
-These properties make the R-tree approach an attractive alternative to
-graph-based agglomeration methods (see [3] for more details).
 
 ## References
 * [1] Di Pietro, Daniele Antonio and Ern, Alexandre (2012), Mathematical Aspects of Discontinuous Galerkin Methods. ISBN: [978-3-642-22980-0](https://www.springer.com/gp/book/9783642229794)
 * [2] Marco Feder, Andrea Cangiani and Luca Heltai (2025), R3MG: R-tree based agglomeration of polytopal grids with applications to multilevel methods. DOI: [10.1016/j.jcp.2025.113773](https://doi.org/10.1016/j.jcp.2025.113773)
-* [3] George Karypis and Vipin Kumar, A fast and high quality multilevel scheme for partitioning irregular graphs. DOI: [10.1137/S1064827595287997](https://doi.org/10.1137/S1064827595287997)
+* [3] Beckmann, Norbert; Kriegel, Hans-Peter; Schneider, Ralf; Seeger, Bernhard (1990), The R*-tree: an efficient and robust access method for points and rectangles. DOI: [10.1145/93597.98741](https://doi.org/10.1145/93597.98741)
+* [4] George Karypis and Vipin Kumar (1998), A fast and high quality multilevel scheme for partitioning irregular graphs. DOI: [10.1137/S1064827595287997](https://doi.org/10.1137/S1064827595287997)
