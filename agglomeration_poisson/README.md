@@ -292,18 +292,18 @@ This manufactured solution allows us to compute the global
 assess the quality of the numerical approximation.
 
 
-In this example, we start from an unstructured initial mesh and then perform two global refinement steps. The resulting meshes are shown below.
+In this example, we start from an unstructured initial mesh and then perform five global refinement steps. The resulting meshes are shown below.
 <div align="center">
-  <img src="./doc/images/input_mesh.png" width="280">
-  <img src="./doc/images/mesh_refined.png" width="300">
+  <img src="./doc/images/input_mesh.png" width="250">
+  <img src="./doc/images/mesh_refined_5times.png" width="260">
   <br>
-  <span style="display:inline-block; width:250px;"><em>(1) Input mesh</em></span>
-  <span style="display:inline-block; width:350px;"><em>(2) Mesh after two global refinements</em></span>
+  <span style="display:inline-block; width:280px;"><em>(1) Input mesh</em></span>
+  <span style="display:inline-block; width:300px;"><em>(2) Fine level mesh obtained by five global refinements of the input mesh </em></span>
 </div>
-Agglomerates are then constructed by METIS and by the
+Agglomerates are then constructed from the fine level mesh by METIS and by the
 R-tree strategy, leading to different polytopal meshes. The following images
-compare the resulting agglomerates on the same underlying mesh for two
-different agglomeration sizes (91 and 364 agglomerates).
+compare the resulting agglomerates corresponding to two
+different agglomeration levels (91 and 364 agglomerates).
 
 <h4>Comparison of agglomeration strategies</h4>
 
@@ -330,7 +330,7 @@ different agglomeration sizes (91 and 364 agglomerates).
 </div>
 
 These plots illustrate how the two strategies distribute and shape the
-agglomerates on the same mesh. In particular, the R-tree approach produces
+agglomerates starting from the same fine level mesh. In particular, the R-tree approach produces
 geometry-driven groupings induced by the spatial hierarchy, while METIS
 produces graph-based partitions of the cell adjacency graph.
 

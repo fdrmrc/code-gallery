@@ -242,7 +242,7 @@ Poisson<dim>::make_grid()
   }
 
   // Refine the mesh to obtain the fine grid used for agglomeration.
-  tria.refine_global(2);
+  tria.refine_global(5);
 
   // Write the refined (fine) mesh used as starting point for agglomeration.
   {
@@ -252,6 +252,8 @@ Poisson<dim>::make_grid()
    }
     //  grid_in.read_msh(gmsh_file);
     //  tria.refine_global(2);
+    
+
 
   std::cout << "Size of tria: " << tria.n_active_cells() << std::endl;
   cached_tria = std::make_unique<GridTools::Cache<dim>>(tria, mapping);
@@ -348,8 +350,9 @@ Poisson<dim>::setup_agglomeration()
     else if (partitioner_type == PartitionerType::rtree)
       partitioner = "rtree";
     else
-      partitioner = "no_partitioning";
-
+      partitioner = "no_partitioning";      
+        
+      
     const std::string filename =
       "grid_" + partitioner + "_" + std::to_string(n_subdomains) + ".vtu";
     std::ofstream output(filename);
@@ -537,7 +540,9 @@ Poisson<dim>::assemble_system()
                   const auto &normals = fe_faces0.get_normal_vectors();
 
                   const double penalty =
-                    penalty_constant / std::fabs(polytope->diameter());
+                    penalty_constant / std::min(polytope->diameter(), neigh_polytope->diameter());
+                  //const double penalty =
+                   // penalty_constant / std::fabs(polytope->diameter());
 
                   // M11
                   for (unsigned int q_index :
