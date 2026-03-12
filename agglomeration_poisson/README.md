@@ -366,11 +366,11 @@ are collected from the program outputs and summarized in post-processing.
 Finally, the program also outputs VTU files for visualization in ParaView. Figures (15) and (16) show the solution computed on 91 agglomerates and then interpolated back onto the fine mesh, for the R-tree and METIS strategies, respectively, visualized in ParaView using Warp By Scalar together with the Surface representation.
 
 <div align="center">
-  <img src="./doc/images/final_solution_rtree.png" width="330">
-  <img src="./doc/images/final_solution_metis.png" width="330">
+  <img src="./doc/images/final_solution_rtree.png" width="320">
+  <img src="./doc/images/final_solution_metis.png" width="320">
   <br>
-  <span style="display:inline-block; width:300px;"><em>(15) Interpolated solution with R-tree strategy</em></span>
-  <span style="display:inline-block; width:300px;"><em>(16) Interpolated solution with METIS strategy</em></span>
+  <span style="display:inline-block; width:350px;"><em>(15) Numerical solution using the R-tree strategy</em></span>
+  <span style="display:inline-block; width:350px;"><em>(16) Numerical solution using the METIS strategy</em></span>
 </div>
 
 
