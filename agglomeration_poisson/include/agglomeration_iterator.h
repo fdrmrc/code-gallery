@@ -8,6 +8,16 @@
  *
  * -----------------------------------------------------------------------------
  */
+/**
+ * Iterator support for agglomerated cells.
+ *
+ * This file provides the AgglomerationIterator class, which enables
+ * bidirectional traversal of agglomerated cells represented by
+ * AgglomerationAccessor objects. Together with the corresponding accessor,
+ * it offers an iterator interface for navigating the agglomerated mesh
+ * while hiding the underlying implementation details of the agglomeration
+ * data structures.
+ */
 
 #ifndef agglomeration_iterator_h
 #define agglomeration_iterator_h

@@ -8,6 +8,22 @@
  *
  * -----------------------------------------------------------------------------
  */
+/**
+ * Utility functions and helper classes for agglomerated meshes.
+ *
+ * This file provides auxiliary components used by the polytope-based
+ * agglomeration framework, including connectivity utilities, R-tree
+ * traversal helpers, and support routines for interpolation to the fine
+ * grid, agglomerated level construction, and matrix assembly.
+ *
+ * The functionality collected here is used to manipulate groups of
+ * fine-grid cells as agglomerated polytopes and to support DG discretizations
+ * on the resulting meshes.
+ */
+
+#ifndef poly_utils_h
+#define poly_utils_h
+
 
 #ifndef poly_utils_h
 #define poly_utils_h
@@ -108,8 +124,13 @@ namespace dealii::PolyUtils::internal
   }
 } // namespace dealii::PolyUtils::internal
 
+
+
 namespace dealii::PolyUtils
 {
+
+
+
   template <typename Value,
             typename Options,
             typename Translator,

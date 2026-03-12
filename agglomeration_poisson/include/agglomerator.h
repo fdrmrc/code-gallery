@@ -8,6 +8,20 @@
  *
  * -----------------------------------------------------------------------------
  */
+/**
+ * Utilities for extracting agglomerates from an R-tree hierarchy.
+ *
+ * This file provides helper classes used to traverse an R-tree and to
+ * construct agglomerated cells from a prescribed extraction level. In
+ * particular, it defines an internal visitor for recursive tree traversal
+ * and the CellsAgglomerator class, which collects groups of fine-grid cells
+ * into agglomerates and records the parent-child relationships between tree
+ * nodes across levels.
+ *
+ * These utilities are used in the box-based agglomeration framework to
+ * convert the hierarchical R-tree representation into collections of mesh
+ * cells that can be processed by the agglomeration handler.
+ */
 
 #ifndef agglomerator_h
 #define agglomerator_h

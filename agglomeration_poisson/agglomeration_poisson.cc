@@ -350,7 +350,7 @@ Poisson<dim>::setup_agglomeration()
     else if (partitioner_type == PartitionerType::rtree)
       partitioner = "rtree";
     else
-      partitioner = "no_partitioning";      
+      partitioner = "no_partitioning";
         
       
     const std::string filename =
@@ -742,9 +742,9 @@ main()
   for (unsigned int fe_degree : {1}) //, 2, 3})
     {
       std::cout << "Running with FE degree: " << fe_degree << std::endl;
-      Poisson<2> poisson_problem{PartitionerType::rtree,
+      Poisson<2> poisson_problem{PartitionerType::metis, //  three choices: metis, rtree and no_partition
                                  4 /* extraction_level */,
-                                 256 /* n_subdomains */,
+                                 91 /* n_subdomains */,
                                  fe_degree};
       poisson_problem.run();
       convergence_info.add(

@@ -1,10 +1,10 @@
-\chapter{A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration }
-\hypertarget{index}{}\label{index}\index{A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration@{A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration}}
+\chapter{Polytopic Mesh DG Solver for Poisson }
+\hypertarget{index}{}\label{index}\index{Polytopic Mesh DG Solver for Poisson@{Polytopic Mesh DG Solver for Poisson}}
 \label{index_md__r_e_a_d_m_e}%
 \Hypertarget{index_md__r_e_a_d_m_e}%
 
 
-This program solves a Poisson problem on an agglomerated polytopal mesh using a symmetric interior penalty discontinuous Galerkin (SIPG) method. Agglomerates are constructed by an R-\/tree based spatial indexing strategy, following the approach proposed in \+[2]\+. In addition, a graph-\/based METIS partitioner is also provided in this program for comparison.\hypertarget{index_autotoc_md1}{}\doxysection{\texorpdfstring{Running the code:\+}{Running the code:\+}}\label{index_autotoc_md1}
+This program solves a Poisson problem on an agglomerated polytopal mesh using a symmetric interior penalty discontinuous Galerkin (SIPDG) method. Agglomerates are constructed by an R-\/tree based spatial indexing strategy, following the approach proposed in \+[2]\+. In addition, a graph-\/based METIS partitioner is also provided in this program for comparison.\hypertarget{index_autotoc_md1}{}\doxysection{\texorpdfstring{Running the code:\+}{Running the code:\+}}\label{index_autotoc_md1}
 As in the tutorial programs, type
 
 {\ttfamily cmake -\/DDEAL\+\_\+\+II\+\_\+\+DIR=/\+path/\+to/\+deal.II .}
@@ -35,10 +35,12 @@ The program prints a short summary including:\+
 \item a convergence table with {\ttfamily \#Do\+Fs}, {\ttfamily L2 error}, and {\ttfamily H1 error}.
 \end{DoxyItemize}
 
-The program writes two {\ttfamily .vtu} files for each run:\+
+The program writes the following {\ttfamily .vtu} files for each run:\+
 
 
 \begin{DoxyItemize}
+\item {\ttfamily grid\+\_\+input\+\_\+mesh.\+vtu}, containing the input mesh from gmsh;
+\item {\ttfamily grid\+\_\+fine\+\_\+mesh\+\_\+refined.\+vtu}, containing the globally refined fine mesh;
 \item {\ttfamily grid\+\_\+\texorpdfstring{$<$}{<}partitioner\texorpdfstring{$>$}{>}\+\_\+\texorpdfstring{$<$}{<}n\+\_\+subdomains\texorpdfstring{$>$}{>}.vtu}, containing the agglomerated mesh partition information (cell-\/wise agglomeration labels);
 \item {\ttfamily interpolated\+\_\+solution\+\_\+\texorpdfstring{$<$}{<}partitioner\texorpdfstring{$>$}{>}\+\_\+\texorpdfstring{$<$}{<}n\+\_\+subdomains\texorpdfstring{$>$}{>}.vtu}, containing the numerical solution interpolated to the fine grid together with agglomerate labels for visualization.
 \end{DoxyItemize}
@@ -51,12 +53,13 @@ We consider the Poisson problem in a bounded, simply connected domain $\Omega \s
 The corresponding weak formulation is:\+ find $u \in H^1(\Omega)$ with $u = u_D $ on $\partial\Omega $ such that     \begin{equation}  \int_{\Omega} \nabla u \cdot \nabla v \,\mathrm d\mathbf{x}
   =\int_{\Omega} f\, v \,\mathrm d\mathbf{x}
   \qquad \text{for all } v \in H_0^1(\Omega).
-\end{equation}\hypertarget{index_autotoc_md4}{}\doxysection{\texorpdfstring{SIPG discretization on agglomerated polytopal meshes:\+}{SIPG discretization on agglomerated polytopal meshes:\+}}\label{index_autotoc_md4}
-We discretize the weak formulation by a symmetric interior penalty discontinuous Galerkin (SIPG) method on the agglomerated polytopal mesh $\mathcal{T}_h $, whose elements $K \in \mathcal{T}_h $ are mutually disjoint open polygons (for $d=2 $) or polyhedra (for $d=3 $). For each element we denote its diameter by   \[  h_K := \operatorname{diam}(K).
-\] The mesh skeleton is given by   \[  \Gamma := \bigcup_{K \in \mathcal{T}_h} \partial K,
-\] and we denote by $\Gamma_{\mathrm{int}} $ the union of interior faces, while $\Gamma_{\mathrm D} := \Gamma \cap \partial\Omega $ collects the Dirichlet boundary faces.
+\end{equation}\hypertarget{index_autotoc_md4}{}\doxysection{\texorpdfstring{SIPDG discretization on agglomerated polytopic meshes:\+}{SIPDG discretization on agglomerated polytopic meshes:\+}}\label{index_autotoc_md4}
+We discretize the weak formulation by a symmetric interior penalty discontinuous Galerkin (SIPDG) method on the agglomerated polytopal mesh $T_h $, whose elements $K \in T_h $ are mutually disjoint open polygons (for $d=2 $) or polyhedra (for $d=3 $). For each element we denote its diameter by   \begin{align*}  h_K := \operatorname{diam}(K).
+\end{align*} The mesh skeleton is defined by   \begin{align*}  \Gamma := \bigcup_{K \in T_h} \partial K.
+\end{align*} The mesh skeleton $\Gamma $ is decomposed into $(d-1)$–dimensional simplices $F $ denoting the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or $\partial \Omega $. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/\+edges shared by those two elements only. We denote by $\Gamma_{\mathrm{int}}$ the union of all interior faces, and by   $  \Gamma_{\mathrm D} := \Gamma \cap \partial\Omega
+$ the union of Dirichlet boundary faces.
 
-The discrete space $V_h $ consists of element-\/wise polynomials of degree at most \$p\$ on each $K \in \mathcal{T}_h $. For $u_h, v_h \in V_h $ we use the broken gradient $\nabla_h $ and the standard jump and average operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces.
+The discrete space $V_h $ consists of element-\/wise polynomials of degree at most \$p\$ on each $K \in T_h $. For $u_h, v_h \in V_h $ we use the broken gradient $\nabla_h $ and the standard jump and average operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces.
 
 The DG formulation reads:\+ find $u_h \in V_h $ such that    \begin{equation}  B(u_h,v_h) = l(v_h)
   \qquad \forall\, v_h \in V_h,
@@ -84,19 +87,19 @@ The DG formulation reads:\+ find $u_h \in V_h $ such that    \begin{equation}  B
 
 The penalty parameter is chosen as         \begin{equation}  \sigma(\mathbf x) = C_\sigma
   \begin{cases}
-    \dfrac{p^2}{h_K}, &
+    \dfrac{(p+1)(p+d)}{h_K}, &
       \text{if } \mathbf x \in \partial K \cap \partial\Omega, \\[0.5em]
-    \dfrac{p^2}{\min\{h_K^+,h_K^-\}}, &
+    \dfrac{(p+1)(p+d)}{\min\{h_K^+,h_K^-\}}, &
       \text{if } \mathbf x \in \Gamma_{\mathrm{int}},
   \end{cases}
-\end{equation} where $h_K^\pm $ are the diameters of the two elements sharing the interior face, \$p\$ is the polynomial degree, and we fix $C_\sigma = 10 $ in this program.
+\end{equation} where $h_K^\pm $ are the diameters of the two elements sharing the interior face, and we fix $C_\sigma = 10 $ in this program. Here \$h\+\_\+\+K\$ in for the rtree can be regarded as
 
-This scheme is well posed and admits optimal-\/order a priori error estimates. More precisely, assuming that $u|_K \in H^{s+1}(K) $ for all $K \in \mathcal{T}_h $ and some $1 \le s \le p $, there exists a constant $C > 0 $, independent of $h $, such that    \[  \|u - u_h\|_{L^2(\Omega)}
+This scheme is well posed and admits optimal-\/order a priori error estimates. More precisely, assuming that $u|_K \in H^{s+1}(K) $ for all $K \in T_h $ and some $1 \le s \le p $, there exists a constant $C > 0 $, independent of $h $, such that    \[  \|u - u_h\|_{L^2(\Omega)}
   \le C\, h^{s+1} \, |u|_{H^{s+1}(\Omega)},
 \] and    \[  \|\nabla(u - u_h)\|_{L^2(\Omega)}
   \le C\, h^{s} \, |u|_{H^{s+1}(\Omega)}.
 \] We refer to\texorpdfstring{$\sim$}{\string~}\+[1]\+ for details of the analysis.\hypertarget{index_autotoc_md5}{}\doxysection{\texorpdfstring{Agglomeration strategies}{Agglomeration strategies}}\label{index_autotoc_md5}
-Agglomeration is a key ingredient for constructing polytopic meshes. This program supports two strategies for generating agglomerates, corresponding to the choices {\ttfamily metis} and {\ttfamily rtree}. In this example, we mainly focus on the {\ttfamily rtree} strategy, which is the method developed and introduced in the work \+[2]\+.\hypertarget{index_autotoc_md6}{}\doxysubsection{\texorpdfstring{R-\/tree-\/based agglomeration}{R-\/tree-\/based agglomeration}}\label{index_autotoc_md6}
+Agglomeration is a natural mechanism for constructing polytopic meshes. This program supports two strategies for generating agglomerates, corresponding to the choices {\ttfamily metis} and {\ttfamily rtree}. In this example, we mainly focus on the {\ttfamily rtree} strategy, which is the method developed and introduced in the work \+[2]\+.\hypertarget{index_autotoc_md6}{}\doxysubsection{\texorpdfstring{R-\/tree-\/based agglomeration}{R-\/tree-\/based agglomeration}}\label{index_autotoc_md6}
 \hypertarget{index_autotoc_md7}{}\doxysubsubsection{\texorpdfstring{Basic idea and data structure}{Basic idea and data structure}}\label{index_autotoc_md7}
 In the {\ttfamily rtree} option, axis-\/aligned bounding boxes of all fine cells are inserted into a spatial R-\/tree. Agglomerates are obtained by grouping the cells whose bounding boxes belong to the same node at a user-\/selected extraction level of the tree. This purely geometric strategy does not require external graph partitioners and is typically fast and scalable. The number and shape of the agglomerates are determined by the R-\/tree structure and the chosen level.
 
@@ -115,13 +118,11 @@ At the data-\/structure level, we distinguish leaf nodes and internal nodes:\+
 \end{DoxyItemize}
 
 As a result, each internal node represents a spatial grouping of the objects below it.\hypertarget{index_autotoc_md8}{}\doxysubsubsection{\texorpdfstring{Design targets}{Design targets}}\label{index_autotoc_md8}
-The R-\/tree is used here as a geometry-\/aware structure for grouping cell bounding boxes. The main design targets are:\+
-
-
+The R-\/tree is used here as a geometry-\/aware structure for organizing cell bounding boxes into hierarchical groups. Our construction is guided by the classical R\texorpdfstring{$\ast$}{*}-\/tree criteria of Beckmann et al. \+[3]\+, namely:\+
 \begin{DoxyItemize}
 \item {\bfseries{Minimize box area}}:\+ reduce the area covered by each bounding box,
 \item {\bfseries{Minimize overlap}}:\+ reduce overlap between neighboring boxes,
-\item {\bfseries{Improve compactness}}:\+ reduce box perimeters (equivalently, favor more compact boxes).
+\item {\bfseries{Improve shape-\/regularity}}:\+ reduce box perimeters (equivalently, favor more shape-\/regular boxes).
 \end{DoxyItemize}
 
 These criteria improve the spatial quality of the hierarchy and typically lead to better grouping and query behavior.
@@ -131,51 +132,45 @@ To make the R-\/tree construction more intuitive, we first illustrate the relati
    ~\newline
  {\itshape (1) Examples of MBRs holding geometric data and their MBRs} {\itshape (2) Corresponding R-\/tree data structure elements} ~\newline
  \hypertarget{index_autotoc_md9}{}\doxysubsubsection{\texorpdfstring{Agglomeration extraction}{Agglomeration extraction}}\label{index_autotoc_md9}
-Given a collection of cells (or cut-\/cell bounding boxes), we:\+
+The construction of an R-\/tree spatial index on an arbitrary fine grid provides a natural agglomeration strategy with the following features:\+
 
 
-\begin{DoxyEnumerate}
-\item build an R-\/tree from their bounding boxes,
-\item choose a target tree level,
-\item recursively descend each node at that level to its leaf descendants,
-\item agglomerate leaf cells that share the same ancestor.
-\end{DoxyEnumerate}
+\begin{DoxyItemize}
+\item it is fully automated, robust, and dimension-\/independent;
+\item it produces a nested hierarchy of agglomerates;
+\item the resulting agglomerates are closely aligned with their axis-\/aligned bounding boxes.
+\end{DoxyItemize}
 
-This produces a sequence of nested agglomerated meshes, which can be used in multilevel solvers and preconditioners.
+These properties make the R-\/tree approach an attractive alternative to graph-\/based agglomeration methods.
+
+Given a collection of fine-\/level cells, or of cut-\/cell bounding boxes, the agglomeration procedure is as follows:\+
+
+
+\begin{DoxyItemize}
+\item {\bfseries{Step 1:\+ Build the R-\/tree}} ~\newline
+ Construct an R-\/tree from the set of bounding boxes associated with the fine-\/level cells.
+\item {\bfseries{Step 2:\+ Select a target level}} ~\newline
+ Choose a tree level \$l \textbackslash{}in \{1,\textbackslash{}dots,L\}\$ to control the agglomeration granularity.
+\item {\bfseries{Step 3:\+ Collect leaf descendants}} ~\newline
+ For each node on level \$l\$, recursively traverse its children until leaf nodes are reached.
+\item {\bfseries{Step 4:\+ Agglomerate by common ancestor}} ~\newline
+ Merge leaf cells that belong to the same subtree, that is, those sharing the same ancestor at level \$l\$.
+\end{DoxyItemize}
+
+This yields a nested hierarchy with natural parent-\/child relations across levels and, by repeating the extraction at different levels, produces a sequence of nested agglomerated meshes that can be used in multilevel solvers and preconditioners.
 
 For the agglomeration workflow considered here, the R-\/tree-\/based extraction has the following practical features:\+
 
 
 \begin{DoxyItemize}
-\item {\bfseries{Level-\/independent extraction cost (observed)}}:\+ the wall-\/clock time is approximately constant with respect to the chosen extraction level.
-\item {\bfseries{Boost.\+Geometry backend}}:\+ the implementation relies on the {\ttfamily Boost.\+Geometry} R-\/tree.
-\item {\bfseries{Custom traversal logic}}:\+ hierarchy traversal in the form needed for agglomeration is not directly exposed, so a custom node visitor is implemented.
+\item {\bfseries{Level-\/independent extraction cost (observed):\+}} the wall-\/clock time is approximately constant with respect to the chosen extraction level.
+\item {\bfseries{Boost.\+Geometry backend:\+}} the implementation relies on the {\ttfamily Boost.\+Geometry} R-\/tree.
+\item {\bfseries{Custom traversal logic:\+}} the hierarchy traversal required for agglomeration is not directly exposed, so a custom node visitor is implemented.
 \end{DoxyItemize}
 
-These properties make the R-\/tree approach convenient for constructing nested agglomerated meshes in multilevel finite element and DG settings.\hypertarget{index_autotoc_md10}{}\doxysubsubsection{\texorpdfstring{Algorithmic pipeline}{Algorithmic pipeline}}\label{index_autotoc_md10}
-Given a collection of fine-\/level cells (or cut-\/cell bounding boxes), we proceed as follows:\+
+In the present setting, this makes the R-\/tree approach particularly convenient for constructing nested agglomerated meshes in multilevel finite element and DG settings.
 
-
-\begin{DoxyItemize}
-\item {\bfseries{Step 1:\+ Build the R-\/tree}} Construct an R-\/tree from the set of bounding boxes associated with the fine-\/level cells.
-\item {\bfseries{Step 2:\+ Select a target level}} Choose a tree level \$l\textbackslash{}in \{1,\textbackslash{}dots,L\}\$ to control the agglomeration granularity.
-\item {\bfseries{Step 3:\+ Collect leaf descendants}} For each node on level \$l\$, recursively traverse its children until leaf nodes are reached.
-\item {\bfseries{Step 4:\+ Agglomerate by common ancestor}} Merge leaf cells that belong to the same subtree (same ancestor at level \$l\$).
-\end{DoxyItemize}
-
-This yields a nested hierarchy with natural parent-\/child relations across levels.
-
-Using an R-\/tree in the agglomeration pipeline has two practical advantages:\+
-
-
-\begin{DoxyItemize}
-\item it provides a natural hierarchy over the fine-\/level mesh entities,
-\item it enables geometry-\/aware grouping through recursive subtree extraction.
-\end{DoxyItemize}
-
-This is the key mechanism used later to build nested agglomerated meshes for multilevel methods and DG discretizations.
-
-For illustration, the following images show the R-\/tree based agglomeration on a structured fine mesh:\+
+For illustration, the following images show R-\/tree-\/based agglomeration on a structured fine mesh:\+
 
    ~\newline
  {\itshape (3) Original 8x8 mesh} {\itshape (4) Bounding boxes and mesh elements} ~\newline
@@ -183,59 +178,48 @@ For illustration, the following images show the R-\/tree based agglomeration on 
  {\itshape (5) Tree hierarchy:\+ root node, internal nodes, and leaf nodes from top to bottom (only two child subtrees of the root are shown for clarity)} ~\newline
  
 
-Figures (3)-\/(5) show, respectively, the original fine mesh, the blocks induced by the R-\/tree on the cell bounding boxes, and the corresponding tree structure.\hypertarget{index_autotoc_md11}{}\doxysubsection{\texorpdfstring{METIS-\/based partitioning}{METIS-\/based partitioning}}\label{index_autotoc_md11}
-In the {\ttfamily metis} option, the adjacency graph of the fine mesh is constructed with one vertex per cell and edges between face-\/neighboring cells. This graph is then partitioned by the multilevel graph partitioner METIS into a prescribed number of parts, and each part defines one agglomerate; see \+[3]\+ for details.\hypertarget{index_autotoc_md12}{}\doxysection{\texorpdfstring{Test case:\+}{Test case:\+}}\label{index_autotoc_md12}
+Figures (3)-\/(5) show, respectively, the original fine mesh, the blocks induced by the R-\/tree on the cell bounding boxes, and the corresponding tree structure. \hypertarget{index_autotoc_md10}{}\doxysubsection{\texorpdfstring{METIS-\/based partitioning}{METIS-\/based partitioning}}\label{index_autotoc_md10}
+In the {\ttfamily metis} option, the adjacency graph of the fine mesh is constructed with one vertex per cell and edges between face-\/neighboring cells. This graph is then partitioned by the multilevel graph partitioner METIS into a prescribed number of parts, and each part defines one agglomerate; see \+[4]\+ for details.\hypertarget{index_autotoc_md11}{}\doxysection{\texorpdfstring{Test case:\+}{Test case:\+}}\label{index_autotoc_md11}
 We consider the Poisson problem on the unit square $\Omega = (0,1)^2 $ with the manufactured exact solution   \[  u(x,y) = \sin(\pi x)\sin(\pi y).
 \] The corresponding right-\/hand side is   \[  f(x,y) = 2\pi^2 \sin(\pi x)\sin(\pi y).
 \] This manufactured solution allows us to compute the global $L^2 $-\/ and $H^1 $-\/seminorm errors of the discrete solution in order to assess the quality of the numerical approximation.
 
-In this example, an unstructured fine mesh (e.\+g., a triangular mesh) is used as the starting point. Agglomerates are then constructed by METIS and by the R-\/tree strategy, leading to different polytopal meshes. The following images compare the resulting agglomerates on the same underlying mesh for two different agglomeration sizes (91 and 364 agglomerates).
+In this example, we start from an unstructured initial mesh and then perform five global refinement steps. The resulting meshes are shown below.    ~\newline
+ {\itshape (6) Input mesh} {\itshape (7) Fine level mesh obtained by five global refinements of the input mesh }  Agglomerates are then constructed from the fine level mesh by METIS and by the R-\/tree strategy, leading to different polytopal meshes. The following images compare the resulting agglomerates corresponding to two different agglomeration levels (91 and 364 agglomerates).
 
 \doxysubsubsubsection*{Comparison of agglomeration strategies}
 
    ~\newline
- {\itshape (6) METIS, n\+\_\+partitions = 91} {\itshape (7) METIS, n\+\_\+partitions = 364} ~\newline
+ {\itshape (8) METIS, 91 agglomerates} {\itshape (9) METIS, 364 agglomerates} ~\newline
  
 
    ~\newline
- {\itshape (8) R-\/tree, 91 agglomerates } {\itshape (9) R-\/tree, 364 agglomerates} ~\newline
+ {\itshape (10) R-\/tree, 91 agglomerates } {\itshape (11) R-\/tree, 364 agglomerates} ~\newline
  
 
-These plots illustrate how the two strategies distribute and shape the agglomerates on the same mesh. In particular, the R-\/tree approach produces geometry-\/driven groupings induced by the spatial hierarchy, while METIS produces graph-\/based partitions of the cell adjacency graph.
+These plots illustrate how the two strategies distribute and shape the agglomerates starting from the same fine level mesh. In particular, the R-\/tree approach produces geometry-\/driven groupings induced by the spatial hierarchy, while METIS produces graph-\/based partitions of the cell adjacency graph.
 
-To assess the discretization accuracy, we next compare the error behavior under mesh refinement and polynomial refinement. The plots below are obtained by collecting the program outputs over multiple runs and post-\/processing the reported error data.
-
-  ~\newline
- {\itshape (10) h-\/convergence for (Q\+\_\+p) elements ((p=1,2,3)) with METIS and R-\/tree agglomeration} 
-
-The figure reports the (L\texorpdfstring{$^\wedge$}{\string^}2)-\/ and (H\texorpdfstring{$^\wedge$}{\string^}1)-\/seminorm errors with respect to the manufactured solution (u). Optimal convergence rates are observed for all polynomial degrees and for both agglomeration strategies. In addition, the curves associated with the R-\/tree approach are consistently lower than or comparable to those obtained with METIS-\/based partitioning.
+To assess the discretization accuracy, we next compare the error behavior under mesh refinement or increasing the polynomial degree. The plots below are obtained by collecting the program outputs over multiple runs and post-\/processing the reported error data.
 
   ~\newline
- {\itshape (11) p-\/convergence comparison for (Q\+\_\+p/\+\+P\+\_\+p) elements ((p=1,2,3)) with different agglomeration strategies} 
+ {\itshape (12) h-\/convergence for (Q\+\_\+p) elements ((p=1,2,3)) with METIS and R-\/tree agglomeration} 
+
+The figure reports the (L\texorpdfstring{$^\wedge$}{\string^}2)-\/ and (H\texorpdfstring{$^\wedge$}{\string^}1)-\/seminorm errors with respect to the manufactured solution. Optimal convergence rates are observed for all polynomial degrees and for both agglomeration strategies. In addition, the curves associated with the R-\/tree approach are marginally lower than or comparable to those obtained with METIS-\/based partitioning. Below, we provide a more detailed comparison of p-\/convergence, including both the $Q_p $ versus $P_p $ element choice and the R-\/tree versus METIS agglomeration strategies.   ~\newline
+ {\itshape (13) p-\/convergence results for different element types and agglomeration strategies} 
 
 In addition to accuracy, the cost of constructing the agglomerated polytopal meshes is also relevant in practice. The following timing plot compares the wall-\/clock time required by the R-\/tree and METIS strategies. The timing values are collected from the program outputs and summarized in post-\/processing.
 
   ~\newline
- {\itshape (12) Wall-\/clock time (seconds) for building polytopal grids with R-\/tree and METIS} 
+ {\itshape (14) Wall-\/clock time (seconds) for building polytopal grids with R-\/tree and METIS} 
 
-Finally, the program also writes VTU files that can be visualized in Para\+View. The next figure shows the interpolated solution field {\ttfamily u} on the agglomerated mesh ({\ttfamily interpolated\+\_\+solution\+\_\+rtree\+\_\+91.\+vtu}), rendered with {\ttfamily Surface With Edges}.
+Finally, the program also outputs VTU files for visualization in Para\+View. Figures (15) and (16) show the solution computed on 91 agglomerates and then interpolated back onto the fine mesh, for the R-\/tree and METIS strategies, respectively, visualized in Para\+View using Warp By Scalar together with the Surface representation.
 
-  ~\newline
- {\itshape (13) Interpolated solution field {\ttfamily u} on the agglomerated mesh with 91 agglomerates} 
-
-The construction of an R-\/tree spatial index on an arbitrary fine grid provides a natural and efficient agglomeration strategy with the following features:\+
-
-
-\begin{DoxyItemize}
-\item fully automated, robust, and dimension-\/independent;
-\item it produces a balanced and nested hierarchy of agglomerates;
-\item the shape of the agglomerates closely follows their axis-\/aligned bounding boxes.
-\end{DoxyItemize}
-
-These properties make the R-\/tree approach an attractive alternative to graph-\/based agglomeration methods (see \+[3]\+ for more details).\hypertarget{index_autotoc_md13}{}\doxysection{\texorpdfstring{References}{References}}\label{index_autotoc_md13}
+   ~\newline
+ {\itshape (15) Interpolated solution with R-\/tree strategy} {\itshape (16) Interpolated solution with METIS strategy} \hypertarget{index_autotoc_md12}{}\doxysection{\texorpdfstring{References}{References}}\label{index_autotoc_md12}
 
 \begin{DoxyItemize}
 \item \+[1]\+ Di Pietro, Daniele Antonio and Ern, Alexandre (2012), Mathematical Aspects of Discontinuous Galerkin Methods. ISBN:\+ \href{https://www.springer.com/gp/book/9783642229794}{\texttt{978-\/3-\/642-\/22980-\/0}}
 \item \+[2]\+ Marco Feder, Andrea Cangiani and Luca Heltai (2025), R3\+MG:\+ R-\/tree based agglomeration of polytopal grids with applications to multilevel methods. DOI:\+ \href{https://doi.org/10.1016/j.jcp.2025.113773}{\texttt{10.\+1016/\+j.jcp.\+2025.\+113773}}
-\item \+[3]\+ George Karypis and Vipin Kumar, A fast and high quality multilevel scheme for partitioning irregular graphs. DOI:\+ \href{https://doi.org/10.1137/S1064827595287997}{\texttt{10.\+1137/\+\+S1064827595287997}} 
+\item \+[3]\+ Beckmann, Norbert; Kriegel, Hans-\/\+Peter; Schneider, Ralf; Seeger, Bernhard (1990), The R\texorpdfstring{$\ast$}{*}-\/tree:\+ an efficient and robust access method for points and rectangles. DOI:\+ \href{https://doi.org/10.1145/93597.98741}{\texttt{10.\+1145/\+93597.98741}}
+\item \+[4]\+ George Karypis and Vipin Kumar (1998), A fast and high quality multilevel scheme for partitioning irregular graphs. DOI:\+ \href{https://doi.org/10.1137/S1064827595287997}{\texttt{10.\+1137/\+\+S1064827595287997}} 
 \end{DoxyItemize}

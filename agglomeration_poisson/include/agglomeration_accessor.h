@@ -8,6 +8,13 @@
  *
  * -----------------------------------------------------------------------------
  */
+/**
+ *
+ * This file defines the AgglomerationAccessor class, which provides access
+ * to agglomerated cells and their associated geometric, topological, and
+ * finite element data. It is used together with the agglomeration iterator
+ * to traverse and manipulate polytopal cells in the agglomeration framework.
+ */
 
 #ifndef agglomeration_accessor_h
 #define agglomeration_accessor_h

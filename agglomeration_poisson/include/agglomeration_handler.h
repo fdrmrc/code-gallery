@@ -8,6 +8,20 @@
  *
  * -----------------------------------------------------------------------------
  */
+/**
+ * Data structures and interfaces for agglomerated meshes.
+ *
+ * This file defines the AgglomerationHandler class together with internal
+ * helper data structures used to manage agglomerated cells and their
+ * connectivity. In particular, it provides the iterator interface for
+ * traversing agglomerates, stores boundary and interface information, and
+ * supports the initialization of finite element data structures on the
+ * resulting polytopic mesh.
+ *
+ * These components are used to construct and manipulate agglomerated cells
+ * obtained from groups of fine-grid cells and to support DG discretizations
+ * on the corresponding agglomerated mesh.
+ */
 
 #ifndef agglomeration_handler_h
 #define agglomeration_handler_h
@@ -166,7 +180,12 @@ namespace dealii
 
 /**
  *
+ * This class manages groups of fine-grid cells treated as agglomerated
+ * polytopes and provides the data structures and interfaces needed to
+ * traverse them and to set up DG discretizations on the resulting mesh.
  */
+template <int dim, int spacedim = dim>
+class AgglomerationHandler : public Subscriptor
 template <int dim, int spacedim = dim>
 class AgglomerationHandler : public Subscriptor
 {

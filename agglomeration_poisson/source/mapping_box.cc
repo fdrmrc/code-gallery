@@ -8,6 +8,18 @@
  *
  * -----------------------------------------------------------------------------
  */
+/**
+ * Auxiliary mapping utilities for box-based agglomeration.
+ *
+ * This file provides the MappingBox class, a lightweight mapping used for
+ * cells associated with axis-aligned bounding boxes. In this example,
+ * agglomerated cells are represented geometrically by their enclosing
+ * boxes, which are used as simple Cartesian surrogates to provide the
+ * geometric information required by FEValues and FEFaceValues, such as
+ * quadrature points, Jacobians, inverse Jacobians, and normal vectors.
+ */
+
+
 
 #include <deal.II/base/array_view.h>
 #include <deal.II/base/memory_consumption.h>

@@ -1,6 +1,9 @@
 var searchData=
 [
-  ['on_20agglomerated_20polytopal_20meshes_3a_0',['SIPG discretization on agglomerated polytopal meshes:',['../index.html#autotoc_md4',1,'']]],
-  ['on_20general_20polytopal_20meshes_20generated_20through_20mesh_20agglomeration_1',['A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration',['../index.html',1,'']]],
-  ['output_2',['Program output',['../index.html#autotoc_md2',1,'']]]
+  ['partitioning_0',['METIS-based partitioning',['../index.html#autotoc_md10',1,'']]],
+  ['poisson_1',['Polytopic Mesh DG Solver for Poisson',['../index.html',1,'']]],
+  ['polytopic_20mesh_20dg_20solver_20for_20poisson_2',['Polytopic Mesh DG Solver for Poisson',['../index.html',1,'']]],
+  ['polytopic_20meshes_3a_3',['SIPDG discretization on agglomerated polytopic meshes:',['../index.html#autotoc_md4',1,'']]],
+  ['problem_20description_3a_4',['Problem description:',['../index.html#autotoc_md3',1,'']]],
+  ['program_20output_5',['Program output',['../index.html#autotoc_md2',1,'']]]
 ];

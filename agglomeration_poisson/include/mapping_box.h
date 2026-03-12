@@ -8,9 +8,7 @@
  *
  * -----------------------------------------------------------------------------
  */
-
 /**
- * @file
  * Definition of MappingBox: an efficient affine mapping that associates each
  * active cell with an axis-aligned BoundingBox via a translator map.
  *

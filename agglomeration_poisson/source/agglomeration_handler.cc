@@ -8,6 +8,20 @@
  *
  * -----------------------------------------------------------------------------
  */
+/**
+ * Implementation of the AgglomerationHandler class.
+ *
+ * This file contains the routines used to define agglomerated cells from
+ * groups of fine-grid cells and to manage the corresponding data structures.
+ * In particular, it handles master/slave relationships, bounding-box based
+ * geometric data, agglomeration connectivity, and the initialization of
+ * finite element support objects such as FEValues and FEFaceValues.
+ *
+ * These utilities are used to distribute degrees of freedom and assemble
+ * DG operators on the resulting agglomerated mesh.
+ */
+
+
 
 #include <deal.II/lac/sparsity_tools.h>
 

@@ -25,7 +25,7 @@
 var NAVTREE =
 [
   [ "README preview", "index.html", [
-    [ "A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration", "index.html", "index" ]
+    [ "Polytopic Mesh DG Solver for Poisson", "index.html", "index" ]
   ] ]
 ];
 
