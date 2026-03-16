@@ -158,7 +158,7 @@ SIPDG discretization on agglomerated polytopic meshes:</h1>
 </p>
 <p> The mesh skeleton \(\Gamma \) is decomposed into \((d-1)\)–dimensional simplices \(F \) denoting the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or \(\partial \Omega \). As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only. We denote by \(\Gamma_{\mathrm{int}}\) the union of all interior faces, and by   \(  \Gamma_{\mathrm D} := \Gamma \cap \partial\Omega
 \) the union of Dirichlet boundary faces.</p>
-<p>The discrete space \(V_h \) consists of element-wise polynomials of degree at most $p$ on each \(K \in T_h \). For \(u_h, v_h \in V_h \) we use the broken gradient \(\nabla_h \) and the standard jump and average operators \([\![\cdot]\!]\) and \(\{\!\!\{\cdot\}\!\!\}\) on faces.</p>
+<p>The discrete space \(V_h \) is composed of discontinuous finite elements of degree \(p \) on each \(K \in T_h \), where the local element can be any deal.II finite element of degree \(p \), such as <span class="tt">FE_DGP</span> or <span class="tt">FE_DGQ</span>. For \(u_h, v_h \in V_h \) we use the broken gradient \(\nabla_h \) and the standard jump and average operators \([\![\cdot]\!]\) and \(\{\!\!\{\cdot\}\!\!\}\) on faces.</p>
 <p>The DG formulation reads: find \(u_h \in V_h \) such that    </p><p class="formulaDsp">
 \begin{equation}  B(u_h,v_h) = l(v_h)
   \qquad \forall\, v_h \in V_h,
@@ -193,7 +193,7 @@ SIPDG discretization on agglomerated polytopic meshes:</h1>
 <p>The penalty parameter is chosen as         </p><p class="formulaDsp">
 \begin{equation}  \sigma(\mathbf x) = C_\sigma
   \begin{cases}
-    \dfrac{(p+1)(p+d)}{h_K}, &amp;
+    \dfrac{(p+1)(p+d)}{ h_{K_{\mathrm{Box}}} }, &amp;
       \text{if } \mathbf x \in \partial K \cap \partial\Omega, \\[0.5em]
     \dfrac{(p+1)(p+d)}{\min\{h_K^+,h_K^-\}}, &amp;
       \text{if } \mathbf x \in \Gamma_{\mathrm{int}},
@@ -213,11 +213,39 @@ SIPDG discretization on agglomerated polytopic meshes:</h1>
 </p>
 <p> We refer to~[1] for details of the analysis.</p>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md5"></a>
+Test</h1>
+<p>We discretize the weak formulation by a symmetric interior penalty discontinuous Galerkin (SIPDG) method on an agglomerated polytopal mesh \(\mathcal{T}_h\), whose elements \(K \in \mathcal{T}_h\) are mutually disjoint open polygons (for \(d=2\)) or polyhedra (for \(d=3\)).</p>
+<p>In practice, each agglomerated element \(K\) is constructed as the union of a collection of fine-grid cells. For the <span class="tt">rtree</span> strategy, these fine cells are the leaf descendants of a node at the selected extraction level of the tree. For the <span class="tt">metis</span> strategy, they are the fine cells belonging to one graph partition.</p>
+<p>The mesh skeleton is defined by   </p><p class="formulaDsp">
+\begin{align*}  \Gamma := \bigcup_{K \in \mathcal{T}_h} \partial K.
+\end{align*}
+</p>
+<p> The mesh skeleton \(\Gamma\) is decomposed into \((d-1)\)-dimensional simplices \(F\) representing the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or \(\partial\Omega\). As such, an interface between two elements may consist of more than one face, separated by hanging nodes or edges shared only by those two elements. We denote by \(\Gamma_{\mathrm{int}}\) the union of all interior faces, and by   </p><p class="formulaDsp">
+\[  \Gamma_{\mathrm D} := \Gamma \cap \partial\Omega
+\]
+</p>
+<p> the union of Dirichlet boundary faces.</p>
+<p>For each agglomerated element \(K\), we denote by \(K_{\mathrm{box}}\) the axis-aligned bounding box enclosing \(K\), and we set   </p><p class="formulaDsp">
+\[  h_{K,\mathrm{box}} := \operatorname{diam}(K_{\mathrm{box}}).
+\]
+</p>
+<p> The local finite element space on \(K\) is defined by restricting polynomial shape functions from \(K_{\mathrm{box}}\) to \(K\). More precisely, if \(\{\varphi_i^{K_{\mathrm{box}}}\}\) denotes a degree- \(p\) finite element basis on \(K_{\mathrm{box}}\), then the corresponding basis functions on \(K\) are given by   </p><p class="formulaDsp">
+\[  \varphi_i^K := \varphi_i^{K_{\mathrm{box}}}\big|_K.
+\]
+</p>
+<p> Hence the discrete space is the broken finite element space    </p><p class="formulaDsp">
+\[  V_h := \{ v \in L^2(\Omega) : v|_K \in V_h(K)
+  \text{ for all } K \in \mathcal{T}_h \},
+\]
+</p>
+<p> where \(V_h(K) := \operatorname{span}\{\varphi_i^K\}\).</p>
+<p>For \(u_h, v_h \in V_h\) we use the broken gradient \(\nabla_h\) and the standard jump and average operators \([\![\cdot]\!]\) and \(\{\!\!\{\cdot\}\!\!\}\) on faces.</p>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md6"></a>
 Agglomeration strategies</h1>
 <p>Agglomeration is a natural mechanism for constructing polytopic meshes. This program supports two strategies for generating agglomerates, corresponding to the choices <span class="tt">metis</span> and <span class="tt">rtree</span>. In this example, we mainly focus on the <span class="tt">rtree</span> strategy, which is the method developed and introduced in the work [2].</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md6"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md7"></a>
 R-tree-based agglomeration</h2>
-<h3 class="doxsection"><a class="anchor" id="autotoc_md7"></a>
+<h3 class="doxsection"><a class="anchor" id="autotoc_md8"></a>
 Basic idea and data structure</h3>
 <p>In the <span class="tt">rtree</span> option, axis-aligned bounding boxes of all fine cells are inserted into a spatial R-tree. Agglomerates are obtained by grouping the cells whose bounding boxes belong to the same node at a user-selected extraction level of the tree. This purely geometric strategy does not require external graph partitioners and is typically fast and scalable. The number and shape of the agglomerates are determined by the R-tree structure and the chosen level.</p>
 <p>This approach is particularly suitable for multilevel methods, where a <em>nested</em> agglomerated hierarchy is desirable.</p>
@@ -231,7 +259,7 @@ Basic idea and data structure</h3>
 </li>
 </ul>
 <p>As a result, each internal node represents a spatial grouping of the objects below it.</p>
-<h3 class="doxsection"><a class="anchor" id="autotoc_md8"></a>
+<h3 class="doxsection"><a class="anchor" id="autotoc_md9"></a>
 Design targets</h3>
 <p>The R-tree is used here as a geometry-aware structure for organizing cell bounding boxes into hierarchical groups. Our construction is guided by the classical R*-tree criteria of Beckmann et al. [3], namely:</p><ul>
 <li><b>Minimize box area</b>: reduce the area covered by each bounding box,</li>
@@ -242,7 +270,7 @@ Design targets</h3>
 <p>To make the R-tree construction more intuitive, we first illustrate the relation between geometric objects, their minimum bounding rectangles (MBRs), and the corresponding R-tree hierarchy. The left image shows geometric objects together with their enclosing MBRs, while the right image shows the associated tree structure (leaf and internal nodes). This visual example helps explain how the hierarchical grouping is later used to extract agglomerates.</p>
 <div align="center"> <img src="./doc/images/rtree_example.png" alt="" width="250" class="inline"/> <img src="./doc/images/Tree_A_F.png" alt="" width="280" class="inline"/> <br  />
  <span style="display:inline-block; width:250px;"><em>(1) Examples of MBRs holding geometric data and their MBRs</em></span> <span style="display:inline-block; width:200px;"><em>(2) Corresponding R-tree data structure elements</em></span> <br  />
- </div><h3 class="doxsection"><a class="anchor" id="autotoc_md9"></a>
+ </div><h3 class="doxsection"><a class="anchor" id="autotoc_md10"></a>
 Agglomeration extraction</h3>
 <p>The construction of an R-tree spatial index on an arbitrary fine grid provides a natural agglomeration strategy with the following features:</p>
 <ul>
@@ -276,10 +304,10 @@ Agglomeration extraction</h3>
  <img src="./doc/images/tree_structure.png" alt="" width="550" class="inline"/> <br  />
  <em>(5) Tree hierarchy: root node, internal nodes, and leaf nodes from top to bottom (only two child subtrees of the root are shown for clarity)</em> <br  />
  </div><p>Figures (3)-(5) show, respectively, the original fine mesh, the blocks induced by the R-tree on the cell bounding boxes, and the corresponding tree structure. </p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md10"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md11"></a>
 METIS-based partitioning</h2>
 <p>In the <span class="tt">metis</span> option, the adjacency graph of the fine mesh is constructed with one vertex per cell and edges between face-neighboring cells. This graph is then partitioned by the multilevel graph partitioner METIS into a prescribed number of parts, and each part defines one agglomerate; see [4] for details.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md11"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md12"></a>
 Test case:</h1>
 <p>We consider the Poisson problem on the unit square \(\Omega = (0,1)^2 \) with the manufactured exact solution   </p><p class="formulaDsp">
 \[  u(x,y) = \sin(\pi x)\sin(\pi y).
@@ -305,7 +333,7 @@ Test case:</h1>
 <div align="center"> <img src="./doc/images/time_compare.png" alt="" width="700" class="inline"/> <br  />
  <span style="display:inline-block; width:700px;"><em>(14) Wall-clock time (seconds) for building polytopal grids with R-tree and METIS</em></span> </div><p>Finally, the program also outputs VTU files for visualization in ParaView. Figures (15) and (16) show the solution computed on 91 agglomerates and then interpolated back onto the fine mesh, for the R-tree and METIS strategies, respectively, visualized in ParaView using Warp By Scalar together with the Surface representation.</p>
 <div align="center"> <img src="./doc/images/final_solution_rtree.png" alt="" width="320" class="inline"/> <img src="./doc/images/final_solution_metis.png" alt="" width="320" class="inline"/> <br  />
- <span style="display:inline-block; width:350px;"><em>(15) Numerical solution using the R-tree strategy</em></span> <span style="display:inline-block; width:350px;"><em>(16) Numerical solution using the METIS strategy</em></span> </div><h1 class="doxsection"><a class="anchor" id="autotoc_md12"></a>
+ <span style="display:inline-block; width:350px;"><em>(15) Numerical solution using the R-tree strategy</em></span> <span style="display:inline-block; width:350px;"><em>(16) Numerical solution using the METIS strategy</em></span> </div><h1 class="doxsection"><a class="anchor" id="autotoc_md13"></a>
 References</h1>
 <ul>
 <li>[1] Di Pietro, Daniele Antonio and Ern, Alexandre (2012), Mathematical Aspects of Discontinuous Galerkin Methods. ISBN: <a href="https://www.springer.com/gp/book/9783642229794">978-3-642-22980-0</a></li>

@@ -76,24 +76,19 @@ We discretize the weak formulation by a symmetric interior penalty
 discontinuous Galerkin (SIPDG) method on the agglomerated polytopal mesh
 @f$T_h @f$, whose elements @f$K \in T_h @f$ are mutually disjoint
 open polygons (for @f$d=2 @f$) or polyhedra (for @f$d=3 @f$).
-For each element we denote its diameter by
-@f{align*}
-  h_K := \operatorname{diam}(K).
-@f}
 The mesh skeleton is defined by
 @f{align*}
   \Gamma := \bigcup_{K \in T_h} \partial K.
 @f}
-The mesh skeleton @f$\Gamma @f$ is decomposed into @f$(d-1)@f$–dimensional simplices @f$F @f$ denoting the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or @f$\partial \Omega @f$. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only. We denote by @f$\Gamma_{\mathrm{int}}@f$ the union of all interior faces, and by
+The mesh skeleton @f$\Gamma @f$ is decomposed into @f$(d-1)@f$–dimensional simplices @f$F @f$ representing the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or @f$\partial \Omega @f$. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only. We denote by @f$\Gamma_{\mathrm{int}}@f$ the union of all interior faces, and by
 @f$
   \Gamma_{\mathrm D} := \Gamma \cap \partial\Omega
 @f$
 the union of Dirichlet boundary faces.
 
-The discrete space @f$V_h @f$ consists of element-wise polynomials of degree
-at most $p$ on each @f$K \in T_h @f$. For @f$u_h, v_h \in V_h @f$ we use
-the broken gradient @f$\nabla_h @f$ and the standard jump and average
-operators @f$[\![\cdot]\!]@f$ and @f$\{\!\!\{\cdot\}\!\!\}@f$ on faces.
+In practice, the polytopic mesh is obtained by agglomeration, so that each element @f$K \in T_h @f$ is the union of a collection of leaf cells. For each agglomerated element @f$K @f$, we associate an axis-aligned bounding box @f$B_K @f$. On @f$B_K @f$ we define the standard polynomial space @f$Q_p(B_K)@f$ spanned by tensor-product Lagrange polynomials of degree @f$p @f$ in each coordinate direction. Since @f$K \subset B_K @f$, the basis on @f$K @f$ is defined by restricting each basis function to @f$K @f$. In the implementation, this corresponds to using the deal.II finite element `FE_DGQ` on the bounding box and taking its restriction to the agglomerated element. The global discrete space @f$V_h @f$ is then obtained by assembling these local spaces in a discontinuous manner over all @f$K \in T_h @f$. 
+For @f$u_h, v_h \in V_h @f$ we use the broken gradient @f$\nabla_h @f$ and the standard jump and average operators @f$[\![\cdot]\!]@f$ and @f$\{\!\!\{\cdot\}\!\!\}@f$ on faces. 
+
 
 The DG formulation reads: find @f$u_h \in V_h @f$ such that
 @f{equation}
@@ -131,15 +126,14 @@ The penalty parameter is chosen as
 @f{equation}
   \sigma(\mathbf x) = C_\sigma
   \begin{cases}
-    \dfrac{(p+1)(p+d)}{h_K}, &
+    \dfrac{(p+1)(p+d)}{ h_{B_K} }, &
       \text{if } \mathbf x \in \partial K \cap \partial\Omega, \\[0.5em]
-    \dfrac{(p+1)(p+d)}{\min\{h_K^+,h_K^-\}}, &
+    \dfrac{(p+1)(p+d)}{\min\{h_{B_K}^+,h_{B_K}^-\}}, &
       \text{if } \mathbf x \in \Gamma_{\mathrm{int}},
   \end{cases}
 @f}
-where @f$h_K^\pm @f$ are the diameters of the two elements sharing the
-interior face, 
-and we fix @f$C_\sigma = 10 @f$ in this program. Here $h_K$ in for the rtree can be regarded as 
+where @f$h_{B_K}^\pm@f$ denote the diameters of the bounding boxes associated with the two elements sharing the interior face. In this program, we set @f$C_\sigma = 10@f$.
+
 
 This scheme is well posed and admits optimal-order a priori error
 estimates. More precisely, assuming that @f$u|_K \in H^{s+1}(K) @f$ for all
@@ -155,6 +149,7 @@ and
   \le C\, h^{s} \, |u|_{H^{s+1}(\Omega)}.
 @f]
 We refer to~[1] for details of the analysis.
+
 
 ## Agglomeration strategies
 Agglomeration is a natural mechanism for constructing polytopic meshes.
@@ -341,6 +336,8 @@ manufactured solution. Optimal convergence rates are observed for all
 polynomial degrees and for both agglomeration strategies. In addition, the
 curves associated with the R-tree approach are marginally lower than or
 comparable to those obtained with METIS-based partitioning.
+
+<!--
 Below, we provide a more detailed comparison of p-convergence, including both the 
 @f$Q_p @f$  
   versus 
@@ -351,7 +348,8 @@ Below, we provide a more detailed comparison of p-convergence, including both th
   <br>
   <span style="display:inline-block; width:700px;"><em>(13) p-convergence results for different element types and agglomeration strategies</em></span>
 </div>
-
+ 这是注释，不会显示在 README 页面上 -->
+ 
 In addition to accuracy, the cost of constructing the agglomerated polytopal
 meshes is also relevant in practice. The following timing plot compares the
 wall-clock time required by the R-tree and METIS strategies. The timing values

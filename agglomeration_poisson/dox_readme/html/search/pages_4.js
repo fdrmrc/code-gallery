@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['extraction_0',['Agglomeration extraction',['../index.html#autotoc_md9',1,'']]]
+  ['extraction_0',['Agglomeration extraction',['../index.html#autotoc_md10',1,'']]]
 ];
